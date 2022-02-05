@@ -1,6 +1,6 @@
 require("dotenv").config();
 const {sendSelectList, sendSelectWallet, message} = require("./line-object");
-const {getAllTag, addItem, updateItem, getTodayItems, extractNetvaule, todayExpense} = require("./notion")
+const {getAllTag, getAllItems, addItem, updateItem, getTodayItems, extractNetvaule, todayExpense} = require("./notion")
 const line = require("@line/bot-sdk");
 const app = require('express')();
 const port = process.env.PORT || 3000;
@@ -73,6 +73,18 @@ async function handleEvent(event) {
       const response = await client.replyMessage(
         event.replyToken,
         message(todayExpense(todayList))
+      );
+    }else if(event.message.text == "เงินที่ใช้ได้"){
+      console.log("เงินที่ใช้ได้");
+
+      const items = await getAllItems();
+      const netAsset = items
+      .map(item => item.properties["รับ-จ่าย"].number)
+      .reduce((pre, next)=> pre+next,0);
+
+      const response = await client.replyMessage(
+        event.replyToken,
+        message(`เงินที่ใช้ได้ในเดือนนี้ ${netAsset}`)
       );
     }else{
       console.log("Not match message")

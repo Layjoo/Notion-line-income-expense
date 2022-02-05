@@ -140,6 +140,23 @@ const getAllTag = async () => {
     return tags;
 }
 
+const getAllItems = async () => {
+    const config = {
+        method: "post",
+        url: `https://api.notion.com/v1/databases/${database}/query`,
+        headers: {
+            Authorization: `Bearer ${notionToken}`,
+            "Notion-Version": "2021-08-16",
+            "Content-type": "application/json",
+        }
+    };
+
+    const res = await axios(config);
+    const data = res.data;
+
+    return data.results
+}
+
 const getTodayItems = async () => {
     const config = {
         method: "post",
@@ -199,15 +216,17 @@ const todayExpense = (data) => {
 
 // test
 // (async () => {
-//     const data = await getTodayLists();
-//     console.log(data)
-//     const x = todayExpense(data);
+//     const data = await getAllItems();
+//     const netAsset = data
+//     .map(item => item.properties["รับ-จ่าย"].number)
+//     .reduce((pre, next)=> pre+next,0);
 
-//     console.log(x)
+//     console.log(netAsset)
 // })();
 
 module.exports = {
     getAllTag,
+    getAllItems,
     addItem,
     updateItem,
     getTodayItems,
