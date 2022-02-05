@@ -1,6 +1,6 @@
 require("dotenv").config();
 const {sendSelectList, sendSelectWallet, message} = require("./line-object");
-const {getAllTag, addItem, updateItem, getTodayLists} = require("./notion")
+const {getAllTag, addItem, updateItem, getTodayItems, extractNetvaule, todayExpense} = require("./notion")
 const line = require("@line/bot-sdk");
 const app = require('express')();
 const port = process.env.PORT || 3000;
@@ -67,6 +67,13 @@ async function handleEvent(event) {
         event.replyToken,
         sendSelectList(itemId, tags)
       );
+    }else if(event.message.text == "รายจ่ายวันนี้"){
+      console.log("รายจ่ายวันนี้");
+      const todayList = await getTodayItems();
+      const response = await client.replyMessage(
+        event.replyToken,
+        message(todayExpense(todayList))
+      );
     }else{
       console.log("Not match message")
     }
@@ -108,11 +115,12 @@ async function handleEvent(event) {
         }
 
         //get today items
-        const todayList = await getTodayLists();
-        console.log(todayList)
+        const todayItems = await getTodayItems();
+        const incomeExpenseList = extractNetvaule(todayItems)
+        console.log(incomeExpenseList)
 
         //calculate net
-        const todayNet = todayList.reduce((sum, pre) => sum + pre, 0);
+        const todayNet = incomeExpenseList.reduce((sum, pre) => sum + pre, 0);
         console.log(`รวมรายรับรายจ่ายวันนี้ = ${todayNet}`)
 
         //send net asset

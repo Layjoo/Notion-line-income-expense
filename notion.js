@@ -140,7 +140,7 @@ const getAllTag = async () => {
     return tags;
 }
 
-const getTodayLists = async () => {
+const getTodayItems = async () => {
     const config = {
         method: "post",
         url: `https://api.notion.com/v1/databases/${database}/query`,
@@ -164,20 +164,53 @@ const getTodayLists = async () => {
     const res = await axios(config);
     const data = res.data;
 
+    return data
+}
+
+const extractNetvaule = (data) => {
     return data.results.filter((list)=> typeof list.properties["รับ-จ่าย"].number == "number")
     .map(list=> list.properties["รับ-จ่าย"].number)
 }
 
-//test
+const todayExpense = (data) => {
+    let text = `รายจ่าย\n`
+
+    data.results.filter(list=>list.properties["ชนิด"].select.name == "Expense")
+    .forEach(item => {
+        const detail = item.properties.Detail.title[0].plain_text || "";
+        const expense = item.properties["รับ-จ่าย"].number == null ? "" :
+        ` ราคา ${item.properties["รับ-จ่าย"].number.toString().replace("-", "")}`;
+
+        text = text + "- "
+        + detail
+        + expense
+        + "\n"
+    })
+
+    const totalExpense = data.results
+    .filter(list=>list.properties["ชนิด"].select.name == "Expense")
+    .map(item => item.properties["รับ-จ่าย"].number)
+    .reduce((pre, next) => pre+next, 0)
+
+    text = text + "รวมรายจ่าย " + totalExpense.toString().replace("-","") + " บาท";
+
+    return text
+}
+
+// test
 // (async () => {
-//     const res = await getTodayLists();
-//     console.log(today)
-//     console.log(res)
+//     const data = await getTodayLists();
+//     console.log(data)
+//     const x = todayExpense(data);
+
+//     console.log(x)
 // })();
 
 module.exports = {
     getAllTag,
     addItem,
     updateItem,
-    getTodayLists
+    getTodayItems,
+    extractNetvaule,
+    todayExpense
 };
