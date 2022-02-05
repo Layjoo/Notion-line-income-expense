@@ -216,12 +216,8 @@ const todayExpense = (data) => {
 
 // test
 // (async () => {
-//     const data = await getAllItems();
-//     const netAsset = data
-//     .map(item => item.properties["รับ-จ่าย"].number)
-//     .reduce((pre, next)=> pre+next,0);
-
-//     console.log(netAsset)
+//     daysInMonth = new Date(dateNow.getFullYear(), dateNow.getMonth()+1, 0).getDate();
+//     console.log(daysInMonth)
 // })();
 
 module.exports = {

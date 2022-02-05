@@ -82,9 +82,11 @@ async function handleEvent(event) {
       .map(item => item.properties["รับ-จ่าย"].number)
       .reduce((pre, next)=> pre+next,0);
 
+      const daysInMonth = new Date(dateNow.getFullYear(), dateNow.getMonth()+1, 0).getDate();
+
       const response = await client.replyMessage(
         event.replyToken,
-        message(`เงินที่ใช้ได้ในเดือนนี้ ${netAsset}`)
+        message(`เงินที่ใช้ได้ในเดือนนี้ ${netAsset} บาท\nเฉลี่ยใช้ได้ ${netAsset/daysInMonth-date} บาท/วัน`)
       );
     }else{
       console.log("Not match message")
