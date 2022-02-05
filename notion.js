@@ -173,7 +173,7 @@ const extractNetvaule = (data) => {
 }
 
 const todayExpense = (data) => {
-    let text = `รายจ่าย\n`
+    let text = `รายจ่ายวันที่ ${today}\n`
 
     data.results.filter(list=>list.properties["ชนิด"].select.name == "Expense")
     .forEach(item => {
