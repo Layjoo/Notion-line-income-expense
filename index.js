@@ -86,7 +86,7 @@ async function handleEvent(event) {
 
       const response = await client.replyMessage(
         event.replyToken,
-        message(`เงินที่ใช้ได้ในเดือนนี้ ${netAsset} บาท\nเฉลี่ยใช้ได้ ${netAsset/daysInMonth-date} บาท/วัน`)
+        message(`เงินที่เหลือเดือนนี้ ${netAsset}\nเฉลี่ยใช้ได้ ${Math.floor(netAsset/(daysInMonth-date))} บาท/วัน`)
       );
     }else{
       console.log("Not match message")
