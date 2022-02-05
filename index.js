@@ -61,7 +61,6 @@ async function handleEvent(event) {
 
       //get all list from database
       let tags = await getAllTag();
-      tags.splice(0,9) //fix this -> limit quickreplay
 
       //send richtext menu to select list
       const response = await client.replyMessage(
