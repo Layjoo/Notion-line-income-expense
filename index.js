@@ -1,6 +1,19 @@
 require("dotenv").config();
-const {sendSelectList, sendSelectWallet, message} = require("./line-object");
-const {getAllTag, getAllItems, addItem, updateItem, getTodayItems, extractNetvaule, todayExpense} = require("./notion")
+const {
+  sendSelectList,
+  sendSelectWallet,
+  message
+} = require("./line-object");
+const {
+  getAllTag,
+  getAllItems,
+  addItem,
+  updateItem,
+  getTodayItems,
+  extractNetvaule,
+  todayExpense,
+  excessExpense
+} = require("./notion")
 const line = require("@line/bot-sdk");
 const app = require('express')();
 const port = process.env.PORT || 3000;
@@ -8,7 +21,9 @@ const dateNow = new Date(Date.now())
 let date = dateNow.getDate();
 
 //insert 0 infront of date which lesser than
-if(date < 10){ date = "0" + date}
+if (date < 10) {
+  date = "0" + date
+}
 
 let today = dateNow.toISOString().slice(0, 8);
 today = today.concat(date)
@@ -40,24 +55,24 @@ async function handleEvent(event) {
   //event.type
   console.log(event)
 
-  if(event.type == 'message'){
-    if(/[\+\-]/.test(event.message.text)){
+  if (event.type == 'message') {
+    if (/[\+\-]/.test(event.message.text)) {
       console.log("add");
       const price = event.message.text.match(/^-\d+|(?<=^\+)\d+/);
       const detail = event.message.text.match(/(?<=\d\s).*/);
 
-      console.log(price == null ? undefined: price[0])
-      console.log(detail == null ? undefined: detail[0])
+      console.log(price == null ? undefined : price[0])
+      console.log(detail == null ? undefined : detail[0])
 
       //add new item
       const addItemConfig = {
-        detail: detail == null ? undefined: detail[0],
-        income_expense: price == null ? undefined: parseInt(price[0]),
+        detail: detail == null ? undefined : detail[0],
+        income_expense: price == null ? undefined : parseInt(price[0]),
         date: today
       }
-    
+
       const add = await addItem(addItemConfig);
-      const itemId = add.data.id.replace(/-/g,"");
+      const itemId = add.data.id.replace(/-/g, "");
 
       //get all list from database
       let tags = await getAllTag();
@@ -67,40 +82,47 @@ async function handleEvent(event) {
         event.replyToken,
         sendSelectList(itemId, tags)
       );
-    }else if(event.message.text == "รายจ่ายวันนี้"){
+    } else if (event.message.text == "รายจ่ายวันนี้") {
       console.log("รายจ่ายวันนี้");
       const todayList = await getTodayItems();
       const response = await client.replyMessage(
         event.replyToken,
         message(todayExpense(todayList))
       );
-    }else if(event.message.text == "เงินที่ใช้ได้"){
+    } else if (event.message.text == "เงินที่ใช้ได้") {
       console.log("เงินที่ใช้ได้");
 
       const items = await getAllItems();
       const netAsset = items
-      .map(item => item.properties["รับ-จ่าย"].number)
-      .reduce((pre, next)=> pre+next,0);
+        .map(item => item.properties["รับ-จ่าย"].number)
+        .reduce((pre, next) => pre + next, 0);
 
-      const daysInMonth = new Date(dateNow.getFullYear(), dateNow.getMonth()+1, 0).getDate();
+      const daysInMonth = new Date(dateNow.getFullYear(), dateNow.getMonth() + 1, 0).getDate();
 
       const response = await client.replyMessage(
         event.replyToken,
         message(`เงินที่เหลือเดือนนี้ ${netAsset}\nเฉลี่ยใช้ได้ ${Math.floor(netAsset/(daysInMonth-date))} บาท/วัน`)
       );
-    }else{
+    } else if (event.message.text == "รายจ่ายส่วนเกิน") {
+      console.log("รายจ่ายส่วนเกิน");
+      const text = await excessExpense();
+      const response = await client.replyMessage(
+        event.replyToken,
+        message(text)
+      );
+    } else {
       console.log("Not match message")
     }
-  }else if(event.type == 'postback'){
-    
+  } else if (event.type == 'postback') {
+
     console.log(event)
-    
+
     //collecting data
     const data = JSON.parse(event.postback.data)
     const input = data.input;
     const itemId = data.pageId;
     console.log(input)
-    
+
     //property to update
     const update_config = {
       pageId: itemId
@@ -121,11 +143,11 @@ async function handleEvent(event) {
         );
         break;
       case "add_wallet":
-        if(data.wallet !== "กระเป๋าหลัก"){
-        update_config.wallet = data.wallet;
-        console.log("add wallet")
-        //update wallet
-        await updateItem(update_config)
+        if (data.wallet !== "กระเป๋าหลัก") {
+          update_config.wallet = data.wallet;
+          console.log("add wallet")
+          //update wallet
+          await updateItem(update_config)
         }
 
         //get today items

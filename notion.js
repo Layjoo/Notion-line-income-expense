@@ -214,10 +214,58 @@ const todayExpense = (data) => {
     return text
 }
 
+const excessExpense = async() => {
+    const config = {
+        method: "post",
+        url: `https://api.notion.com/v1/databases/${database}/query`,
+        headers: {
+            Authorization: `Bearer ${notionToken}`,
+            "Notion-Version": "2021-08-16",
+            "Content-type": "application/json",
+        },
+        data: JSON.stringify({
+            filter: {
+                and: [{
+                    property: "Wallet",
+                    select: {
+                        equals: "ส่วนเกิน",
+                    },
+                }, ],
+            }
+        }),
+    };
+
+    const res = await axios(config);
+    const data = res.data;
+
+    let text = `ส่วนเกินเดือนนี้\n`
+
+    data.results.filter(list=>list.properties["ชนิด"].select.name == "Expense")
+    .forEach(item => {
+        const detail = item.properties.Detail.title[0].plain_text || "";
+        const expense = item.properties["รับ-จ่าย"].number == null ? "" :
+        ` ราคา ${item.properties["รับ-จ่าย"].number.toString().replace("-", "")}`;
+
+        text = text + "- "
+        + detail
+        + expense
+        + "\n"
+    })
+
+    const totalExpense = data.results
+    .filter(list=>list.properties["ชนิด"].select.name == "Expense")
+    .map(item => item.properties["รับ-จ่าย"].number)
+    .reduce((pre, next) => pre+next, 0)
+
+    text = text + "รวม " + totalExpense.toString().replace("-","") + " บาท";
+
+    return text
+}
+
 // test
 // (async () => {
-//     daysInMonth = new Date(dateNow.getFullYear(), dateNow.getMonth()+1, 0).getDate();
-//     console.log(daysInMonth)
+//     const res = await excessExpense();
+//     console.log(res)
 // })();
 
 module.exports = {
@@ -227,5 +275,6 @@ module.exports = {
     updateItem,
     getTodayItems,
     extractNetvaule,
-    todayExpense
+    todayExpense,
+    excessExpense
 };
