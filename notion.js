@@ -1,7 +1,7 @@
 require("dotenv").config();
 const axios = require("axios");
 const notionToken = process.env.NOTION_TOKEN;
-const database = process.env.DATABASE;
+const database = process.env.NOTION_DATABASE;
 const dateNow = new Date(Date.now())
 let date = dateNow.getDate();
 
@@ -204,12 +204,23 @@ const todayExpense = (data) => {
         + "\n"
     })
 
-    const totalExpense = data.results
-    .filter(list=>list.properties["ชนิด"].select.name == "Expense")
+    const totalExpenseNotExcess = data.results
+    .filter(list=>list.properties["ชนิด"].select.name == "Expense" && list.properties["Wallet"].select == null)
     .map(item => item.properties["รับ-จ่าย"].number)
     .reduce((pre, next) => pre+next, 0)
 
-    text = text + "รวมรายจ่าย " + totalExpense.toString().replace("-","") + " บาท";
+    const totalExpenseExcess = data.results
+    .filter(list=>list.properties["Wallet"].select !== null)
+    .map(item => item.properties["รับ-จ่าย"].number)
+    .reduce((pre, next) => pre+next, 0)
+
+    const totalExpense = totalExpenseExcess + totalExpenseNotExcess;
+
+    text = text + "รายจ่ายหลัก " + totalExpenseNotExcess.toString().replace("-","") + " บาท" + "\n";
+
+    text = text + "ส่วนเกิน " + totalExpenseExcess.toString().replace("-","") + " บาท" + "\n";
+
+    text = text + "รวม " + totalExpense.toString().replace("-", "") + " บาท";
 
     return text
 }
@@ -257,6 +268,7 @@ const excessExpense = async() => {
     .map(item => item.properties["รับ-จ่าย"].number)
     .reduce((pre, next) => pre+next, 0)
 
+
     text = text + "รวม " + totalExpense.toString().replace("-","") + " บาท";
 
     return text
@@ -264,9 +276,8 @@ const excessExpense = async() => {
 
 // test
 // (async () => {
-//     const res = await excessExpense();
-//     console.log(res)
-// test git clone
+//     const res = await getAllItems();
+//     console.log(res.filter(item=>item.properties.Wallet.select == null).map(item=> item.properties.Wallet))
 // })();
 
 module.exports = {

@@ -1,6 +1,6 @@
 require("dotenv").config();
 const {
-  sendSelectList,
+  sendSelectTags,
   sendSelectWallet,
   message
 } = require("./line-object");
@@ -56,6 +56,7 @@ async function handleEvent(event) {
   console.log(event)
 
   if (event.type == 'message') {
+    //add new income/expense ex. "-200 ค่าข้าว"
     if (/[\+\-]/.test(event.message.text)) {
       console.log("add");
       const price = event.message.text.match(/^-\d+|(?<=^\+)\d+/);
@@ -71,16 +72,17 @@ async function handleEvent(event) {
         date: today
       }
 
+      //push item into database and keep tract item
       const add = await addItem(addItemConfig);
       const itemId = add.data.id.replace(/-/g, "");
 
       //get all list from database
       let tags = await getAllTag();
 
-      //send richtext menu to select list
+      //send richtext menu to select tag
       const response = await client.replyMessage(
         event.replyToken,
-        sendSelectList(itemId, tags)
+        sendSelectTags(itemId, tags)
       );
     } else if (event.message.text == "รายจ่ายวันนี้") {
       console.log("รายจ่ายวันนี้");
@@ -94,6 +96,7 @@ async function handleEvent(event) {
 
       const items = await getAllItems();
       const netAsset = items
+        .filter(item =>  item.properties.Wallet.select == null)
         .map(item => item.properties["รับ-จ่าย"].number)
         .reduce((pre, next) => pre + next, 0);
 
@@ -119,8 +122,7 @@ async function handleEvent(event) {
 
     //collecting data
     const data = JSON.parse(event.postback.data)
-    const input = data.input;
-    const itemId = data.pageId;
+    const {input, pageId:itemId} = data;
     console.log(input)
 
     //property to update

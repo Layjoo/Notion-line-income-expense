@@ -1,6 +1,6 @@
 const { json } = require("express/lib/response");
 
-const sendSelectList = (pageId, lists) => {
+const sendSelectTags = (pageId, tags) => {
     const quickReply = {
         type: "text",
         text: `เลือกรายการ`,
@@ -9,14 +9,14 @@ const sendSelectList = (pageId, lists) => {
         },
     };
 
-    for (let i in lists) {
+    for (let i in tags) {
         quickReply.quickReply.items.push({
             type: "action",
             action: {
                 type: "postback",
-                label: lists[i],
-                data: JSON.stringify({"input": "add_list", "pageId": pageId, "list": lists[i]}),
-                displayText: lists[i],
+                label: tags[i],
+                data: JSON.stringify({"input": "add_list", "pageId": pageId, "list": tags[i]}),
+                displayText: tags[i],
             },
         })
     }
@@ -59,7 +59,7 @@ const message = (message) => {
     return reply;
 }
 module.exports = {
-    sendSelectList,
+    sendSelectTags,
     sendSelectWallet,
     message
 }
