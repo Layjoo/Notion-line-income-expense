@@ -4,14 +4,10 @@ const notionToken = process.env.NOTION_TOKEN;
 const database = process.env.NOTION_DATABASE;
 const dateNow = new Date(Date.now())
 let date = dateNow.getDate();
+const dayjs = require('dayjs');
+const today = dayjs().format("YYYY-MM-DD").toString();
 
-//insert 0 infront of date which lesser than
-if(date < 10){ date = "0" + date}
-
-let today = dateNow.toISOString().slice(0, 8);
-today = today.concat(date)
-
-const addItem = async ({detail, income_expense, list, wallet, type, date}) => {
+const addItem = async ({detail, income_expense, list, type, date}) => {
     const config = {
         method: "post",
         url: "https://api.notion.com/v1/pages",
@@ -49,11 +45,6 @@ const addItem = async ({detail, income_expense, list, wallet, type, date}) => {
                     "name": `${list}`
                 }
             },
-            "Wallet": wallet && {
-                "select": {
-                    "name": `${wallet}`
-                }
-            },
             "ชนิด": type && {
                 "select": {
                     "name": `${type}`
@@ -71,7 +62,7 @@ const addItem = async ({detail, income_expense, list, wallet, type, date}) => {
     return res
 }
 
-const updateItem = async ({pageId, detail, income_expense, list, wallet, type, date}) => {
+const updateItem = async ({pageId, detail, income_expense, list, type, date}) => {
 
     const config = {
         method: "patch",
@@ -98,11 +89,6 @@ const updateItem = async ({pageId, detail, income_expense, list, wallet, type, d
                 "รายการ": list && {
                     "select": {
                         "name": `${list}`
-                    }
-                },
-                "Wallet": wallet && {
-                    "select": {
-                        "name": `${wallet}`
                     }
                 },
                 "ชนิด": type && {
@@ -204,81 +190,14 @@ const todayExpense = (data) => {
         + "\n"
     })
 
-    const totalExpenseNotExcess = data.results
-    .filter(list=>list.properties["ชนิด"].select.name == "Expense" && list.properties["Wallet"].select == null)
-    .map(item => item.properties["รับ-จ่าย"].number)
-    .reduce((pre, next) => pre+next, 0)
-
-    const totalExpenseExcess = data.results
-    .filter(list=>list.properties["Wallet"].select !== null)
-    .map(item => item.properties["รับ-จ่าย"].number)
-    .reduce((pre, next) => pre+next, 0)
-
-    const totalExpense = totalExpenseExcess + totalExpenseNotExcess;
-
-    text = text + "รายจ่ายหลัก " + totalExpenseNotExcess.toString().replace("-","") + " บาท" + "\n";
-
-    text = text + "ส่วนเกิน " + totalExpenseExcess.toString().replace("-","") + " บาท" + "\n";
-
-    text = text + "รวม " + totalExpense.toString().replace("-", "") + " บาท";
-
-    return text
-}
-
-const excessExpense = async() => {
-    const config = {
-        method: "post",
-        url: `https://api.notion.com/v1/databases/${database}/query`,
-        headers: {
-            Authorization: `Bearer ${notionToken}`,
-            "Notion-Version": "2021-08-16",
-            "Content-type": "application/json",
-        },
-        data: JSON.stringify({
-            filter: {
-                and: [{
-                    property: "Wallet",
-                    select: {
-                        equals: "ส่วนเกิน",
-                    },
-                }, ],
-            }
-        }),
-    };
-
-    const res = await axios(config);
-    const data = res.data;
-
-    let text = `ส่วนเกินเดือนนี้\n`
-
-    data.results.filter(list=>list.properties["ชนิด"].select.name == "Expense")
-    .forEach(item => {
-        const detail = item.properties.Detail.title[0].plain_text || "";
-        const expense = item.properties["รับ-จ่าย"].number == null ? "" :
-        ` ราคา ${item.properties["รับ-จ่าย"].number.toString().replace("-", "")}`;
-
-        text = text + "- "
-        + detail
-        + expense
-        + "\n"
-    })
-
     const totalExpense = data.results
     .filter(list=>list.properties["ชนิด"].select.name == "Expense")
     .map(item => item.properties["รับ-จ่าย"].number)
     .reduce((pre, next) => pre+next, 0)
 
-
     text = text + "รวม " + totalExpense.toString().replace("-","") + " บาท";
-
     return text
 }
-
-// test
-// (async () => {
-//     const res = await getAllItems();
-//     console.log(res.filter(item=>item.properties.Wallet.select == null).map(item=> item.properties.Wallet))
-// })();
 
 module.exports = {
     getAllTag,
@@ -288,5 +207,4 @@ module.exports = {
     getTodayItems,
     extractNetvaule,
     todayExpense,
-    excessExpense
 };

@@ -1,7 +1,6 @@
 require("dotenv").config();
 const {
   sendSelectTags,
-  sendSelectWallet,
   message
 } = require("./line-object");
 const {
@@ -12,21 +11,14 @@ const {
   getTodayItems,
   extractNetvaule,
   todayExpense,
-  excessExpense
 } = require("./notion")
 const line = require("@line/bot-sdk");
 const app = require('express')();
+const dayjs = require('dayjs');
+const today = dayjs().format("YYYY-MM-DD").toString();
 const port = process.env.PORT || 3000;
-const dateNow = new Date(Date.now())
-let date = dateNow.getDate();
 
-//insert 0 infront of date which lesser than
-if (date < 10) {
-  date = "0" + date
-}
 
-let today = dateNow.toISOString().slice(0, 8);
-today = today.concat(date)
 
 //setting config for line client
 const config = {
@@ -50,20 +42,21 @@ app.post("/callback", line.middleware(config), (req, res) => {
     });
 });
 
+//waking server
+app.get('/waking', async (req, res) => {
+  const response = "Server has woken up...";
+  console.log("Server has woken up...")
+  res.send(response);
+})
+
 //event handler if user interaction with bot
 async function handleEvent(event) {
-  //event.type
-  console.log(event)
-
   if (event.type == 'message') {
     //add new income/expense ex. "-200 ค่าข้าว"
     if (/[\+\-]/.test(event.message.text)) {
-      console.log("add");
+      console.log("Message >>> add new item");
       const price = event.message.text.match(/^-\d+|(?<=^\+)\d+/);
       const detail = event.message.text.match(/(?<=\d\s).*/);
-
-      console.log(price == null ? undefined : price[0])
-      console.log(detail == null ? undefined : detail[0])
 
       //add new item
       const addItemConfig = {
@@ -85,45 +78,37 @@ async function handleEvent(event) {
         sendSelectTags(itemId, tags)
       );
     } else if (event.message.text == "รายจ่ายวันนี้") {
-      console.log("รายจ่ายวันนี้");
+      console.log("Message >>> รายจ่ายวันนี้");
       const todayList = await getTodayItems();
       const response = await client.replyMessage(
         event.replyToken,
         message(todayExpense(todayList))
       );
+      console.log("Log >>> send message success")
     } else if (event.message.text == "เงินที่ใช้ได้") {
-      console.log("เงินที่ใช้ได้");
+      console.log("Message >>> เงินที่ใช้ได้");
 
       const items = await getAllItems();
       const netAsset = items
-        .filter(item =>  item.properties.Wallet.select == null)
         .map(item => item.properties["รับ-จ่าย"].number)
         .reduce((pre, next) => pre + next, 0);
 
-      const daysInMonth = new Date(dateNow.getFullYear(), dateNow.getMonth() + 1, 0).getDate();
+      const daysInMonth = dayjs(today).daysInMonth();
+      const date = dayjs().get('date');
 
       const response = await client.replyMessage(
         event.replyToken,
-        message(`เงินที่เหลือเดือนนี้ ${netAsset}\nเฉลี่ยใช้ได้ ${Math.floor(netAsset/(daysInMonth-date))} บาท/วัน`)
+        message(`เงินที่เหลือเดือนนี้ ${netAsset}\nใช้ได้อีก ${daysInMonth-date} วัน\nเฉลี่ยใช้ได้ ${Math.floor(netAsset/(daysInMonth-date))} บาท/วัน`)
       );
-    } else if (event.message.text == "รายจ่ายส่วนเกิน") {
-      console.log("รายจ่ายส่วนเกิน");
-      const text = await excessExpense();
-      const response = await client.replyMessage(
-        event.replyToken,
-        message(text)
-      );
+      console.log("Log >>> send message success")
     } else {
-      console.log("Not match message")
+      console.log("Log >>> Not match message")
     }
   } else if (event.type == 'postback') {
-
-    console.log(event)
-
     //collecting data
     const data = JSON.parse(event.postback.data)
     const {input, pageId:itemId} = data;
-    console.log(input)
+    console.log("Post back >>> " + input)
 
     //property to update
     const update_config = {
@@ -134,38 +119,25 @@ async function handleEvent(event) {
     switch (input) {
       case "add_list":
         update_config.list = data.list;
-        console.log("add list")
+        update_config.detail = data.list;
         //update list
         await updateItem(update_config);
-
-        //send select wallet
-        await client.replyMessage(
-          event.replyToken,
-          sendSelectWallet(itemId)
-        );
-        break;
-      case "add_wallet":
-        if (data.wallet !== "กระเป๋าหลัก") {
-          update_config.wallet = data.wallet;
-          console.log("add wallet")
-          //update wallet
-          await updateItem(update_config)
-        }
+        console.log("Log >>> add list successs")
 
         //get today items
         const todayItems = await getTodayItems();
         const incomeExpenseList = extractNetvaule(todayItems)
-        console.log(incomeExpenseList)
 
         //calculate net
         const todayNet = incomeExpenseList.reduce((sum, pre) => sum + pre, 0);
-        console.log(`รวมรายรับรายจ่ายวันนี้ = ${todayNet}`)
+        console.log(`Log >>> รวมรายรับรายจ่ายวันนี้ = ${todayNet}`)
 
         //send net asset
         await client.replyMessage(
           event.replyToken,
           message(`รวมรายรับรายจ่ายวันนี้\n ${todayNet.toString()} บาท`)
         );
+
         break;
       default:
         break;
