@@ -14,11 +14,15 @@ const {
 } = require("./notion")
 const line = require("@line/bot-sdk");
 const app = require('express')();
-const dayjs = require('dayjs');
-const today = dayjs().format("YYYY-MM-DD").toString();
 const port = process.env.PORT || 3000;
 
-
+//time setting
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc')
+const timezone = require('dayjs/plugin/timezone')
+dayjs.extend(utc)
+dayjs.extend(timezone)
+const today = dayjs().tz("Asia/Bangkok").format("YYYY-MM-DD").toString();
 
 //setting config for line client
 const config = {
@@ -27,10 +31,6 @@ const config = {
 };
 
 const client = new line.Client(config);
-
-app.get('/net_today', async (req, res) => {
-  res.send(response);
-})
 
 //web hook, get event when user do somthing with bot
 app.post("/callback", line.middleware(config), (req, res) => {
