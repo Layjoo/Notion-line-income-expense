@@ -75,7 +75,7 @@ async function handleEvent(event) {
       //send richtext menu to select tag
       const response = await client.replyMessage(
         event.replyToken,
-        sendSelectTags(itemId, tags)
+        sendSelectTags(itemId, tags, detail == null ? false : true)
       );
     } else if (event.message.text == "รายจ่ายวันนี้") {
       console.log("Message >>> รายจ่ายวันนี้");
@@ -119,7 +119,7 @@ async function handleEvent(event) {
     switch (input) {
       case "add_list":
         update_config.list = data.list;
-        update_config.detail = data.list;
+        if(!data.has_detail) update_config.detail = data.list;
         //update list
         await updateItem(update_config);
         console.log("Log >>> add list successs")
