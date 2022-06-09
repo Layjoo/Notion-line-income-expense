@@ -80,6 +80,7 @@ async function handleEvent(event) {
     } else if (event.message.text == "รายจ่ายวันนี้") {
       console.log("Message >>> รายจ่ายวันนี้");
       const todayList = await getTodayItems();
+      console.log(today);
       const response = await client.replyMessage(
         event.replyToken,
         message(todayExpense(todayList))

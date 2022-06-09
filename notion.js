@@ -9,7 +9,7 @@ const utc = require('dayjs/plugin/utc')
 const timezone = require('dayjs/plugin/timezone') // dependent on utc plugin
 dayjs.extend(utc)
 dayjs.extend(timezone)
-const today = dayjs().tz("Asia/Bangkok").format("YYYY-MM-DD").toString();
+const today = dayjs().tz("Asia/Bangkok").format("YYYY-MM-DD").toString()
 
 const addItem = async ({detail, income_expense, list, type, date}) => {
     const config = {
