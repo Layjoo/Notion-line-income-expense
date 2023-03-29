@@ -1,9 +1,7 @@
 import { db } from "./firebase-init.js";
 import {
   getDoc,
-  deleteDoc,
   doc,
-  onSnapshot,
   setDoc,
   addDoc,
   collection,

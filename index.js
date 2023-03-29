@@ -81,9 +81,7 @@ const messageHandeler = async (event) => {
   if(isAccountingObject) {
     await addToList({...isAccountingObject, user_id: userId})
 
-    const today = moment().format("DD/MM/YYYY");
-
-    const data = await filterDataByDateAndUserId(today, userId);
+    const data = await filterDataByDateAndUserId(isAccountingObject.date, userId);
     const messages = [todayAccoutingList(data)];
 
     await sendMessages(event.replyToken, messages);
