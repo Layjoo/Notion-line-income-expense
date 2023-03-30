@@ -1,12 +1,16 @@
-import * as dotenv from 'dotenv'
-dotenv.config()
-import { addToList, addUserDocument, filterDataByDateAndUserId, verifyUser } from "./firestore-api.js";
+import * as dotenv from "dotenv";
+dotenv.config();
+import {
+  addToList,
+  addUserDocument,
+  filterDataByDateAndUserId,
+  verifyUser,
+} from "./firestore-api.js";
 import { todayAccoutingList } from "./message-object.js";
-import moment from "moment";
-
 
 import line from "@line/bot-sdk";
-import express from 'express'
+import express from "express";
+import moment from "moment";
 const port = process.env.PORT || 3000;
 
 const app = express();
@@ -30,11 +34,11 @@ app.post("/callback", line.middleware(config), (req, res) => {
 });
 
 //waking server
-app.get('/waking', async (req, res) => {
+app.get("/waking", async (req, res) => {
   const response = "Server has woken up...";
-  console.log("Server has woken up...")
+  console.log("Server has woken up...");
   res.send(response);
-})
+});
 
 //event handler if user interaction with bot
 async function handleEvent(event) {
@@ -78,25 +82,35 @@ const messageHandeler = async (event) => {
 
   const isAccountingObject = parseAccoutingMessage(message);
 
-  if(isAccountingObject) {
-    await addToList({...isAccountingObject, user_id: userId})
+  if (isAccountingObject) {
+    await addToList({ ...isAccountingObject, user_id: userId });
 
-    const data = await filterDataByDateAndUserId(isAccountingObject.date, userId);
+    const data = await filterDataByDateAndUserId(
+      isAccountingObject.date,
+      userId
+    );
     const messages = [todayAccoutingList(data)];
 
     await sendMessages(event.replyToken, messages);
     return;
   }
+
+  if(message === "รายจ่ายวันนี้") {
+    const data = await filterDataByDateAndUserId(
+      moment().format("DD/MM/YYYY"),
+      userId
+    );
+    const messages = [todayAccoutingList(data)];
+
+    await sendMessages(event.replyToken, messages);
+  }
+
 };
 
 // Helper function
 
 const sendMessages = async (replyToken, messages) => {
-
-  const response = await client.replyMessage(
-    replyToken,
-    messages
-  );
+  const response = await client.replyMessage(replyToken, messages);
 };
 
 const parseAccoutingMessage = (message) => {
@@ -108,17 +122,22 @@ const parseAccoutingMessage = (message) => {
     lines[0] && lines[0].startsWith("วันที่ ") ? lines[0].split(" ")[1] : null;
   const tag =
     lines[1] && lines[1].startsWith("รายการ ")
-      ? lines[1].split(" ")[1]
+      ? lines[1].replace("รายการ ", "")
       : null;
   const detail =
-    lines[2] && lines[2].startsWith("รายละเอียด ") ? lines[2].split(" ")[1] : null;
+    lines[2] && lines[2].startsWith("รายละเอียด ")
+      ? lines[2].replace("รายละเอียด ", "")
+      : null;
   const price =
     lines[3] && lines[3].startsWith("ราคา ")
       ? parseInt(lines[3].split(" ")[1])
       : null;
+  const type = lines[4] && lines[4].startsWith("ประเภท ")
+      ? lines[4].replace("ประเภท ", "") === "รายรับ" ? "income": "expense"
+      : null;
 
   // Check if extracted information is valid
-  if (!date || !detail || !tag || !price) {
+  if (!date || !detail || !tag || !price || !type) {
     console.log(`Normal text: ${message}`);
     return null;
   }
@@ -128,7 +147,8 @@ const parseAccoutingMessage = (message) => {
     date: date,
     detail: detail,
     tag: tag,
-    price: price.toString(),
+    price: type === "expense" ? "-" + price.toString() : price.toString(),
+    type: type
   };
 
   // Do something with the data object (e.g. store it in a database)
@@ -136,5 +156,5 @@ const parseAccoutingMessage = (message) => {
 };
 
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`)
-})
+  console.log(`Example app listening at http://localhost:${port}`);
+});
