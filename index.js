@@ -52,8 +52,32 @@ async function handleEvent(event) {
     case "message":
       await messageHandeler(event);
       break;
+    case "postback":
+      await postbackHandeler(event);
+      break;
     default:
       console.log(`Unsupported event type: ${eventType}`);
+  }
+}
+
+const postbackHandeler = async (event) => {
+  const userId = event.source.userId;
+  const isVerified = await verifyUser(userId);
+
+  if (!isVerified) {
+    //await sendMessages(event.replyToken, messages);
+    return;
+  }
+
+  if(event.postback.data === "history_account") {
+    const date = event.postback.params.date;
+    const data = await filterDataByDateAndUserId(
+      moment(date).format("DD/MM/YYYY"),
+      userId
+    );
+    const messages = [todayAccoutingList(data)];
+
+    await sendMessages(event.replyToken, messages);
   }
 }
 
@@ -101,6 +125,31 @@ const messageHandeler = async (event) => {
       userId
     );
     const messages = [todayAccoutingList(data)];
+
+    await sendMessages(event.replyToken, messages);
+  }
+
+  if(message === "ดูประวัติรายจ่าย") {
+    const messages = [{
+      "type": "text",
+      "text": "เลือกวันที่ต้องการดูประวัติ",
+      "quickReply": {
+        "items": [
+          {
+            "type": "action",
+            "action": {
+              "type": "datetimepicker",
+              "label": "เลือกวันที่",
+              "data": "history_account",
+              "mode": "date",
+              "initial": moment().format("YYYY-MM-DD"),
+              "max": moment().format("YYYY-MM-DD"),
+              "min": "2023-01-01"
+            }
+          }
+        ]
+      }
+    }]
 
     await sendMessages(event.replyToken, messages);
   }
