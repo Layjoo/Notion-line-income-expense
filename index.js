@@ -1,19 +1,13 @@
 import * as dotenv from "dotenv";
 dotenv.config();
-import {
-  addToList,
-  addUserDocument,
-  filterDataByDateAndUserId,
-  verifyUser,
-} from "./firestore-api.js";
-import { todayAccoutingList } from "./message-object.js";
 
+import { todayAccoutingList } from "./message-object.js";
 import line from "@line/bot-sdk";
 import express from "express";
 import moment from "moment";
 const port = process.env.PORT || 3000;
-
 const app = express();
+import { addListToDB, getAccoutingListByDateAndUserId } from "./supabase-api.js";
 
 //setting config for line client
 const config = {
@@ -62,24 +56,18 @@ async function handleEvent(event) {
 
 const postbackHandeler = async (event) => {
   const userId = event.source.userId;
-  const isVerified = await verifyUser(userId);
 
-  if (!isVerified) {
-    //await sendMessages(event.replyToken, messages);
-    return;
-  }
-
-  if(event.postback.data === "history_account") {
+  if (event.postback.data === "history_account") {
     const date = event.postback.params.date;
-    const data = await filterDataByDateAndUserId(
-      moment(date).format("DD/MM/YYYY"),
+    const data = await getAccoutingListByDateAndUserId(
+      moment(date).format("YYYY-MM-DD"),
       userId
     );
     const messages = [todayAccoutingList(data)];
 
     await sendMessages(event.replyToken, messages);
   }
-}
+};
 
 const followHandeler = async (event) => {
   const userId = event.source.userId;
@@ -97,31 +85,25 @@ const followHandeler = async (event) => {
 const messageHandeler = async (event) => {
   const userId = event.source.userId;
   const message = event.message.text;
-  const isVerified = await verifyUser(userId);
-
-  if (!isVerified) {
-    //await sendMessages(event.replyToken, messages);
-    return;
-  }
 
   const isAccountingObject = parseAccoutingMessage(message);
 
   if (isAccountingObject) {
-    await addToList({ ...isAccountingObject, user_id: userId });
+    await addListToDB({ ...isAccountingObject, user_id: userId });
 
-    const data = await filterDataByDateAndUserId(
+    const data = await getAccoutingListByDateAndUserId(
       isAccountingObject.date,
       userId
     );
+
     const messages = [todayAccoutingList(data)];
 
     await sendMessages(event.replyToken, messages);
-    return;
   }
 
-  if(message === "รายจ่ายวันนี้") {
-    const data = await filterDataByDateAndUserId(
-      moment().format("DD/MM/YYYY"),
+  if (message === "รายจ่ายวันนี้") {
+    const data = await getAccoutingListByDateAndUserId(
+      moment().format("YYYY-MM-DD"),
       userId
     );
     const messages = [todayAccoutingList(data)];
@@ -129,79 +111,60 @@ const messageHandeler = async (event) => {
     await sendMessages(event.replyToken, messages);
   }
 
-  if(message === "ดูประวัติรายจ่าย") {
-    const messages = [{
-      "type": "text",
-      "text": "เลือกวันที่ต้องการดูประวัติ",
-      "quickReply": {
-        "items": [
-          {
-            "type": "action",
-            "action": {
-              "type": "datetimepicker",
-              "label": "เลือกวันที่",
-              "data": "history_account",
-              "mode": "date",
-              "initial": moment().format("YYYY-MM-DD"),
-              "max": moment().format("YYYY-MM-DD"),
-              "min": "2023-01-01"
-            }
-          }
-        ]
-      }
-    }]
+  if (message === "ดูประวัติรายจ่าย") {
+    const messages = [
+      {
+        type: "text",
+        text: "เลือกวันที่ต้องการดูประวัติ",
+        quickReply: {
+          items: [
+            {
+              type: "action",
+              action: {
+                type: "datetimepicker",
+                label: "เลือกวันที่",
+                data: "history_account",
+                mode: "date",
+                initial: moment().format("YYYY-MM-DD"),
+                max: moment().format("YYYY-MM-DD"),
+                min: "2023-01-01",
+              },
+            },
+          ],
+        },
+      },
+    ];
 
     await sendMessages(event.replyToken, messages);
   }
-
 };
 
 // Helper function
-
 const sendMessages = async (replyToken, messages) => {
   const response = await client.replyMessage(replyToken, messages);
 };
 
 const parseAccoutingMessage = (message) => {
+  console.log(message)
   // Split message text into lines
-  const lines = message.split("\n");
+  const keywords = ["จ่ายเงินค่า", "ได้เงินค่า"];
+  const detailRegex = /(?<=จ่ายเงินค่า|ได้เงินค่า).*?(?=\s)/;
+  const priceRegex = /\d+(?=\sบาท)/;
 
-  // Extract relevant information from lines
-  const date =
-    lines[0] && lines[0].startsWith("วันที่ ") ? lines[0].split(" ")[1] : null;
-  const tag =
-    lines[1] && lines[1].startsWith("รายการ ")
-      ? lines[1].replace("รายการ ", "")
-      : null;
-  const detail =
-    lines[2] && lines[2].startsWith("รายละเอียด ")
-      ? lines[2].replace("รายละเอียด ", "")
-      : null;
-  const price =
-    lines[3] && lines[3].startsWith("ราคา ")
-      ? parseInt(lines[3].split(" ")[1])
-      : null;
-  const type = lines[4] && lines[4].startsWith("ประเภท ")
-      ? lines[4].replace("ประเภท ", "") === "รายรับ" ? "income": "expense"
-      : null;
+  let accountingData;
+  keywords.forEach((keyword) => {
+    if (message.includes(keyword) && message.includes("บาท")) {
+      const type = keyword === "จ่ายเงินค่า" ? "expense" : "income";
+      const detail = detailRegex.exec(message)[0] || "";
+      const price = parseInt(message.match(priceRegex)[0] || 0);
+      const tag = "others";
+      const date = moment().format("YYYY-MM-DD");
 
-  // Check if extracted information is valid
-  if (!date || !detail || !tag || !price || !type) {
-    console.log(`Normal text: ${message}`);
-    return null;
-  }
+      accountingData = { date, detail, tag, price, type };
+    }
+  });
 
-  // Create data object
-  const data = {
-    date: date,
-    detail: detail,
-    tag: tag,
-    price: type === "expense" ? "-" + price.toString() : price.toString(),
-    type: type
-  };
-
-  // Do something with the data object (e.g. store it in a database)
-  return data;
+  return accountingData;
 };
 
 app.listen(port, () => {

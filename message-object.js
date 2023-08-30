@@ -4,7 +4,8 @@ export const todayAccoutingList = (data) => {
     let totalPrice = 0;
 
     data.forEach((item) => {
-      totalPrice += parseInt(item.price);
+      const type = item.type === "expense" ? -1 : 1;
+      totalPrice += item.price * type;
     });
 
     return totalPrice;
@@ -73,7 +74,7 @@ export const todayAccoutingList = (data) => {
                   },
                   {
                     type: "text",
-                    text: expense.price,
+                    text: expense.type === "expense" ? `-${expense.price}` : `+${expense.price}`,
                     size: "sm",
                     align: "end",
                     flex: 2,
@@ -113,3 +114,7 @@ export const todayAccoutingList = (data) => {
     },
   };
 };
+
+export const summaryThisMonth = (data) => {
+  
+}
