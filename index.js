@@ -1,13 +1,13 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import { todayAccoutingList } from "./message-object.js";
+import { currentMonthAccoutingList, todayAccoutingList } from "./message-object.js";
 import line from "@line/bot-sdk";
 import express from "express";
 import moment from "moment";
 const port = process.env.PORT || 3000;
 const app = express();
-import { addListToDB, getAccoutingListByDateAndUserId } from "./supabase-api.js";
+import { addListToDB, getAccoutingListByDateAndUserId, getAccoutingListCurrentMonth } from "./supabase-api.js";
 
 //setting config for line client
 const config = {
@@ -96,7 +96,16 @@ const messageHandeler = async (event) => {
       userId
     );
 
+    console.log(data)
+
     const messages = [todayAccoutingList(data)];
+
+    await sendMessages(event.replyToken, messages);
+  }
+
+  if (message === "สรุปรายจ่ายเดือนนี้") {
+    const data = await getAccoutingListCurrentMonth(userId);
+    const messages = [currentMonthAccoutingList(data)];
 
     await sendMessages(event.replyToken, messages);
   }
