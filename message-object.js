@@ -235,6 +235,28 @@ export const todayAccoutingList = (data) => {
           },
         ],
       },
+      footer: {
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "button",
+                action: {
+                  type: "message",
+                  label: "สรุปรายจ่ายเดือนนี้",
+                  text: "สรุปรายจ่ายเดือนนี้",
+                },
+                height: "sm",
+                style: "primary",
+              },
+            ],
+          },
+        ],
+      },
     },
   };
 };
@@ -353,7 +375,7 @@ export const currentMonthAccoutingList = (data) => {
                     text: `ดูประวัติวันที่ ${moment(item.date).format(
                       "D MMMM YYYY"
                     )}`,
-                    data: `{"postback_type": "history_account", "date": "${data.date}"}`,
+                    data: `{"postback_type": "history_account", "date": "${item.date}"}`,
                   },
                   width: "20px",
                   backgroundColor: "#CAF2C9FF",

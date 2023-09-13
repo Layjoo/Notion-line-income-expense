@@ -68,7 +68,8 @@ const postbackHandeler = async (event) => {
 
   //this will catch the data from datepicker when user type "ดูประวัติรายจ่าย"
   if (postbackData.postback_type === "history_account") {
-    const date = event.postback.params.date && postbackData.date;
+    const date = event.postback.params?.date || postbackData.date;
+    console.log(date);
     const data = await getAccoutingListByDateAndUserId(
       moment(date).format("YYYY-MM-DD"),
       userId
@@ -99,7 +100,6 @@ const postbackHandeler = async (event) => {
     const messages = [todayAccoutingList(data)];
     await sendMessages(event.replyToken, messages);
   }
-  
 };
 
 const followHandeler = async (event) => {
@@ -132,7 +132,10 @@ const messageHandeler = async (event) => {
   //other type of message
   if (message === "สรุปรายจ่ายเดือนนี้") {
     const data = await getAccoutingListCurrentMonth(userId);
-    const messages = [currentMonthAccoutingList(data)];
+    const messages = [
+      { type: "text", text: "แตะที่วันที่เพื่อดูรายจ่าย" },
+      currentMonthAccoutingList(data),
+    ];
 
     await sendMessages(event.replyToken, messages);
   }
@@ -178,13 +181,19 @@ const messageHandeler = async (event) => {
     const messages = [
       {
         type: "text",
-        text: "ตัวอย่างสร้างรายจ่าย พิมพ์ว่า จ่ายเงินค่า(อะไร) (ราคา) บาท" + "\n" + "เช่น จ่ายเงินค่าอาหาร 100 บาท"
+        text:
+          "ตัวอย่างสร้างรายจ่าย พิมพ์ว่า จ่ายเงินค่า(อะไร) (ราคา) บาท" +
+          "\n" +
+          "เช่น จ่ายเงินค่าอาหาร 100 บาท",
       },
       {
         type: "text",
-        text: "ตัวอย่างสร้างรายรับ พิมพ์ว่า ได้เงินค่า(อะไร) (ราคา) บาท" + "\n" + "เช่น ได้เงินค่าขายของ 200 บาท"
-      }
-      ]
+        text:
+          "ตัวอย่างสร้างรายรับ พิมพ์ว่า ได้เงินค่า(อะไร) (ราคา) บาท" +
+          "\n" +
+          "เช่น ได้เงินค่าขายของ 200 บาท",
+      },
+    ];
 
     await sendMessages(event.replyToken, messages);
   }
