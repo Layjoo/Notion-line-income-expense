@@ -1,121 +1,6 @@
 import moment from "moment";
 moment.locale("th");
 
-export const currentMonthAccoutingList = (data) => {
-  function calculateTotalPrice(data) {
-    let totalPrice = 0;
-
-    data.forEach((item) => {
-      totalPrice += item.summary;
-    });
-
-    return totalPrice;
-  }
-
-  return {
-    type: "flex",
-    altText: `รายจ่ายเดือนนี้ ${calculateTotalPrice(data.list).toString()} บาท`,
-    contents: {
-      type: "bubble",
-      body: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: `สรุปรายการเดือน ${moment(data.month).format("MMMM YYYY")}`,
-            weight: "bold",
-            size: "md",
-          },
-          {
-            type: "separator",
-            margin: "md",
-          },
-          {
-            type: "box",
-            layout: "vertical",
-            margin: "md",
-            contents: [
-              {
-                type: "box",
-                layout: "horizontal",
-                contents: [
-                  {
-                    type: "text",
-                    text: "วันที่",
-                    size: "sm",
-                    weight: "bold",
-                    flex: 3,
-                  },
-                  {
-                    type: "text",
-                    text: "ใช้จ่าย",
-                    size: "sm",
-                    weight: "bold",
-                    align: "end",
-                    flex: 2,
-                  },
-                ],
-              },
-              {
-                type: "separator",
-                margin: "md",
-              },
-              // Iterate through the data array and generate a table row for each entry
-              ...data.list.map((item) => ({
-                type: "box",
-                layout: "horizontal",
-                margin: "md",
-                contents: [
-                  {
-                    type: "text",
-                    text: moment(item.date).format("D"),
-                    size: "sm",
-                    flex: 3,
-                  },
-                  {
-                    type: "text",
-                    text: `${item.summary} บาท`,
-                    size: "sm",
-                    align: "end",
-                    flex: 2,
-                  },
-                ],
-              })),
-              {
-                type: "separator",
-                margin: "md",
-              },
-              {
-                type: "box",
-                layout: "horizontal",
-                margin: "md",
-                contents: [
-                  {
-                    type: "text",
-                    text: "รวม",
-                    size: "sm",
-                    weight: "bold",
-                    flex: 3,
-                  },
-                  {
-                    type: "text",
-                    text: `${calculateTotalPrice(data.list).toString()} บาท`,
-                    size: "sm",
-                    weight: "bold",
-                    align: "end",
-                    flex: 2,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    },
-  };
-};
-
 export const todayAccoutingList = (data) => {
   function calculateTotalPrice(data) {
     let totalPrice = 0;
@@ -330,6 +215,198 @@ export const todayAccoutingList = (data) => {
             type: "box",
             layout: "horizontal",
             margin: "sm",
+            contents: [
+              {
+                type: "text",
+                text: "รวม",
+                weight: "bold",
+                size: "sm",
+                contents: [],
+              },
+              {
+                type: "text",
+                text: `${calculateTotalPrice(data.list).toString()} บาท`,
+                weight: "bold",
+                size: "sm",
+                align: "end",
+                contents: [],
+              },
+            ],
+          },
+        ],
+      },
+    },
+  };
+};
+
+export const currentMonthAccoutingList = (data) => {
+  function calculateTotalPrice(data) {
+    let totalPrice = 0;
+
+    data.forEach((item) => {
+      totalPrice += item.summary;
+    });
+
+    return totalPrice;
+  }
+
+  function findMaxExpense(data) {
+    let max = 0;
+
+    data.forEach((item) => {
+      const onlyPrice = item.summary < 0 ? item.summary * -1 : item.summary;
+
+      if (onlyPrice > max) {
+        max = onlyPrice;
+      }
+    });
+
+    return max;
+  }
+
+  function calculateWidth(summary, data) {
+    const max = findMaxExpense(data);
+    const onlyPrice = summary < 0 ? summary * -1 : summary;
+
+    return Math.floor((onlyPrice / max) * 180);
+  }
+  return {
+    type: "flex",
+    altText: `รายจ่ายเดือนนี้ ${calculateTotalPrice(data.list).toString()} บาท`,
+    contents: {
+      type: "bubble",
+      direction: "ltr",
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "สรุปรายจ่ายประจำเดือน",
+                weight: "bold",
+                size: "md",
+                color: "#29BA24FF",
+                contents: [],
+              },
+              {
+                type: "text",
+                text: `เดือน ${moment(data.month)
+                  .locale("th")
+                  .format("MMMM YYYY")}`,
+                size: "md",
+                gravity: "bottom",
+                margin: "md",
+                contents: [],
+              },
+            ],
+          },
+          {
+            type: "separator",
+            margin: "md",
+          },
+          {
+            type: "box",
+            layout: "horizontal",
+            margin: "md",
+            contents: [
+              {
+                type: "text",
+                text: "วันที่",
+                weight: "bold",
+                size: "sm",
+                contents: [],
+              },
+              {
+                type: "text",
+                text: "ใช้จ่าย",
+                weight: "bold",
+                size: "sm",
+                align: "end",
+                contents: [],
+              },
+            ],
+          },
+          {
+            type: "separator",
+            margin: "sm",
+          },
+
+          //dynamic section
+          ...data.list.map((item) => {
+            return {
+              type: "box",
+              layout: "horizontal",
+              margin: "md",
+              contents: [
+                {
+                  type: "box",
+                  layout: "vertical",
+                  action: {
+                    type: "postback",
+                    label: `ดูประวัติวันที่ ${moment(item.date).format(
+                      "D MMMM YYYY"
+                    )}`,
+                    text: `ดูประวัติวันที่ ${moment(item.date).format(
+                      "D MMMM YYYY"
+                    )}`,
+                    data: `{"postback_type": "history_account", "date": "${data.date}"}`,
+                  },
+                  width: "20px",
+                  backgroundColor: "#CAF2C9FF",
+                  cornerRadius: "8px",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `${moment(item.date).format("D")}`,
+                      size: "xxs",
+                      color: "#29BA24FF",
+                      align: "center",
+                      contents: [],
+                    },
+                  ],
+                  justifyContent: "center",
+                  alignItems: "center",
+                },
+                {
+                  type: "text",
+                  text: `${item.summary}`,
+                  size: "xxs",
+                  color: "#EA4444FF",
+                  align: "end",
+                  offsetEnd: "5px",
+                  contents: [],
+                },
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  //calculate width (max width = 200px)
+                  width: `${calculateWidth(item.summary, data.list)}px`,
+                  backgroundColor: "#F5E8E8FF",
+                  contents: [
+                    {
+                      type: "text",
+                      text: ".",
+                      color: "#F5E8E8FF",
+                      contents: [],
+                    },
+                  ],
+                },
+              ],
+            };
+          }),
+
+          {
+            type: "separator",
+            margin: "md",
+          },
+          {
+            type: "box",
+            layout: "horizontal",
+            margin: "md",
             contents: [
               {
                 type: "text",

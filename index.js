@@ -68,7 +68,7 @@ const postbackHandeler = async (event) => {
 
   //this will catch the data from datepicker when user type "ดูประวัติรายจ่าย"
   if (postbackData.postback_type === "history_account") {
-    const date = event.postback.params.date;
+    const date = event.postback.params.date && postbackData.date;
     const data = await getAccoutingListByDateAndUserId(
       moment(date).format("YYYY-MM-DD"),
       userId
