@@ -1,13 +1,21 @@
 import * as dotenv from "dotenv";
 dotenv.config();
 
-import { currentMonthAccoutingList, todayAccoutingList } from "./message-object.js";
+import {
+  currentMonthAccoutingList,
+  todayAccoutingList,
+} from "./message-object.js";
 import line from "@line/bot-sdk";
 import express from "express";
 import moment from "moment";
 const port = process.env.PORT || 3000;
 const app = express();
-import { addListToDB, getAccoutingListByDateAndUserId, getAccoutingListCurrentMonth } from "./supabase-api.js";
+import {
+  addListToDB,
+  deleteItemById,
+  getAccoutingListByDateAndUserId,
+  getAccoutingListCurrentMonth,
+} from "./supabase-api.js";
 
 //setting config for line client
 const config = {
@@ -56,8 +64,10 @@ async function handleEvent(event) {
 
 const postbackHandeler = async (event) => {
   const userId = event.source.userId;
+  const postbackData = JSON.parse(event.postback.data);
 
-  if (event.postback.data === "history_account") {
+  //this will catch the data from datepicker when user type "ดูประวัติรายจ่าย"
+  if (postbackData.postback_type === "history_account") {
     const date = event.postback.params.date;
     const data = await getAccoutingListByDateAndUserId(
       moment(date).format("YYYY-MM-DD"),
@@ -67,18 +77,34 @@ const postbackHandeler = async (event) => {
 
     await sendMessages(event.replyToken, messages);
   }
+
+  //delete item
+  if (postbackData.postback_type === "delete_item") {
+    const idToDelete = parseInt(postbackData.delete_item_id);
+    const dateOfItem = postbackData.date;
+
+    //delete item from database
+    const { error } = await deleteItemById(idToDelete);
+
+    if (error) {
+      const messages = { type: "text", text: "ลบรายการไม่สำเร็จ" };
+      return await sendMessages(event.replyToken, messages);
+    }
+
+    //if item is deleted, send new list to user
+    const data = await getAccoutingListByDateAndUserId(
+      moment(dateOfItem).format("YYYY-MM-DD"),
+      userId
+    );
+    const messages = [todayAccoutingList(data)];
+    await sendMessages(event.replyToken, messages);
+  }
+  
 };
 
 const followHandeler = async (event) => {
   const userId = event.source.userId;
-  const isVerified = await verifyUser(userId);
-
-  if (!isVerified) {
-    await addUserDocument(userId);
-    return;
-  }
-
-  console.log("You have already verified");
+  console.log("New user followed: " + userId);
   return;
 };
 
@@ -86,8 +112,8 @@ const messageHandeler = async (event) => {
   const userId = event.source.userId;
   const message = event.message.text;
 
+  //check if message is accounting message ex. จ่ายเงินค่าอาหาร 100 บาท
   const isAccountingObject = parseAccoutingMessage(message);
-
   if (isAccountingObject) {
     await addListToDB({ ...isAccountingObject, user_id: userId });
 
@@ -96,13 +122,14 @@ const messageHandeler = async (event) => {
       userId
     );
 
-    console.log(data)
+    console.log(data);
 
     const messages = [todayAccoutingList(data)];
 
     await sendMessages(event.replyToken, messages);
   }
 
+  //other type of message
   if (message === "สรุปรายจ่ายเดือนนี้") {
     const data = await getAccoutingListCurrentMonth(userId);
     const messages = [currentMonthAccoutingList(data)];
@@ -132,7 +159,7 @@ const messageHandeler = async (event) => {
               action: {
                 type: "datetimepicker",
                 label: "เลือกวันที่",
-                data: "history_account",
+                data: `{"postback_type": "history_account"}`,
                 mode: "date",
                 initial: moment().format("YYYY-MM-DD"),
                 max: moment().format("YYYY-MM-DD"),
@@ -146,6 +173,21 @@ const messageHandeler = async (event) => {
 
     await sendMessages(event.replyToken, messages);
   }
+
+  if (message === "วิธีเพิ่มรายการใหม่") {
+    const messages = [
+      {
+        type: "text",
+        text: "ตัวอย่างสร้างรายจ่าย พิมพ์ว่า จ่ายเงินค่า(อะไร) (ราคา) บาท" + "\n" + "เช่น จ่ายเงินค่าอาหาร 100 บาท"
+      },
+      {
+        type: "text",
+        text: "ตัวอย่างสร้างรายรับ พิมพ์ว่า ได้เงินค่า(อะไร) (ราคา) บาท" + "\n" + "เช่น ได้เงินค่าขายของ 200 บาท"
+      }
+      ]
+
+    await sendMessages(event.replyToken, messages);
+  }
 };
 
 // Helper function
@@ -154,7 +196,7 @@ const sendMessages = async (replyToken, messages) => {
 };
 
 const parseAccoutingMessage = (message) => {
-  console.log(message)
+  console.log(message);
   // Split message text into lines
   const keywords = ["จ่ายเงินค่า", "ได้เงินค่า"];
   const detailRegex = /(?<=จ่ายเงินค่า|ได้เงินค่า).*?(?=\s)/;
