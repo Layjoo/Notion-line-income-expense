@@ -344,7 +344,7 @@ export const currentMonthAccoutingList = (data) => {
               },
               {
                 type: "text",
-                text: "ใช้จ่าย",
+                text: "ยอดรวม",
                 weight: "bold",
                 size: "sm",
                 align: "end",
@@ -395,7 +395,7 @@ export const currentMonthAccoutingList = (data) => {
                 },
                 {
                   type: "text",
-                  text: `${item.summary}`,
+                  text: item.summary > 0 ? `+${item.summary}` : `${item.summary}`,
                   size: "xxs",
                   color: "#EA4444FF",
                   align: "end",
@@ -407,12 +407,12 @@ export const currentMonthAccoutingList = (data) => {
                   layout: "horizontal",
                   //calculate width (max width = 200px)
                   width: `${calculateWidth(item.summary, data.list)}px`,
-                  backgroundColor: "#F5E8E8FF",
+                  backgroundColor: item.summary > 0 ? "#CAF2C9FF" : "#F5E8E8FF",
                   contents: [
                     {
                       type: "text",
                       text: ".",
-                      color: "#F5E8E8FF",
+                      color: item.summary > 0 ? "#CAF2C9FF" : "#F5E8E8FF",
                       contents: [],
                     },
                   ],
