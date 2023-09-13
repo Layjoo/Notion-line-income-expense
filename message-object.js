@@ -397,7 +397,7 @@ export const currentMonthAccoutingList = (data) => {
                   type: "text",
                   text: item.summary > 0 ? `+${item.summary}` : `${item.summary}`,
                   size: "xxs",
-                  color: item.summary > 0 ? "#CAF2C9FF" : "#EA4444FF",
+                  color: item.summary > 0 ? "#29BA24FF" : "#EA4444FF",
                   align: "end",
                   offsetEnd: "5px",
                   contents: [],
