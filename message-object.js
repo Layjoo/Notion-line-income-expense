@@ -13,6 +13,22 @@ export const todayAccoutingList = (data) => {
     return totalPrice;
   }
 
+  const totalPrice = calculateTotalPrice(data.list);
+
+  const totalIncome = data.list.reduce((acc, item) => {
+    if (item.type === "income") {
+      return acc + item.price;
+    }
+    return acc;
+  }, 0);
+
+  const totalExpense = data.list.reduce((acc, item) => {
+    if (item.type === "expense") {
+      return acc + item.price;
+    }
+    return acc;
+  }, 0);
+
   if (data.list.length === 0) {
     return {
       type: "flex",
@@ -171,7 +187,7 @@ export const todayAccoutingList = (data) => {
                 text:
                   item.type === "expense" ? `-${item.price}` : `+${item.price}`,
                 size: "sm",
-                color: item.type === "expense" ? "#EA4444FF" : "#000000",
+                color: item.type === "expense" ? "#EA4444FF" : "#29BA24FF",
                 align: "end",
                 offsetEnd: "8px",
                 contents: [],
@@ -214,7 +230,53 @@ export const todayAccoutingList = (data) => {
           {
             type: "box",
             layout: "horizontal",
-            margin: "sm",
+            margin: "md",
+            contents: [
+              {
+                type: "text",
+                text: "รายรับทั้งหมด",
+                weight: "bold",
+                size: "sm",
+                contents: [],
+              },
+              {
+                type: "text",
+                text: `+${totalIncome} บาท`,
+                color: "#29BA24FF",
+                weight: "bold",
+                size: "sm",
+                align: "end",
+                contents: [],
+              },
+            ],
+          },
+          {
+            type: "box",
+            layout: "horizontal",
+            margin: "xs",
+            contents: [
+              {
+                type: "text",
+                text: "รายจ่ายทั้งหมด",
+                weight: "bold",
+                size: "sm",
+                contents: [],
+              },
+              {
+                type: "text",
+                text: `-${totalExpense} บาท`,
+                color: "#EA4444FF",
+                weight: "bold",
+                size: "sm",
+                align: "end",
+                contents: [],
+              },
+            ],
+          },
+          {
+            type: "box",
+            layout: "horizontal",
+            margin: "xs",
             contents: [
               {
                 type: "text",
@@ -225,7 +287,8 @@ export const todayAccoutingList = (data) => {
               },
               {
                 type: "text",
-                text: `${calculateTotalPrice(data.list).toString()} บาท`,
+                text: `${totalPrice} บาท`,
+                color:  totalPrice > 0 ? "#29BA24FF" : "#EA4444FF",
                 weight: "bold",
                 size: "sm",
                 align: "end",
@@ -272,25 +335,27 @@ export const currentMonthAccoutingList = (data) => {
     return totalPrice;
   }
 
-  function findMaxExpense(data) {
+  function findMaxSummaryLenght(data) {
     let max = 0;
 
     data.forEach((item) => {
-      const onlyPrice = item.summary < 0 ? item.summary * -1 : item.summary;
+      const summtion = item.income + item.expense;
 
-      if (onlyPrice > max) {
-        max = onlyPrice;
+      if (summtion > max) {
+        max = summtion;
       }
     });
 
     return max;
   }
 
-  function calculateWidth(summary, data) {
-    const max = findMaxExpense(data);
-    const onlyPrice = summary < 0 ? summary * -1 : summary;
+  function calculateWidth(data, income, expense) {
+    const max = findMaxSummaryLenght(data);
 
-    return Math.floor((onlyPrice / max) * 180);
+    const width = Math.floor(((income + expense) / max) * 180)
+    console.log(width)
+
+    return width;
   }
   return {
     type: "flex",
@@ -395,24 +460,50 @@ export const currentMonthAccoutingList = (data) => {
                 },
                 {
                   type: "text",
-                  text: item.summary > 0 ? `+${item.summary}` : `${item.summary}`,
+                  text:
+                    item.summary > 0 ? `+${item.summary}` : `${item.summary}`,
                   size: "xxs",
                   color: item.summary > 0 ? "#29BA24FF" : "#EA4444FF",
                   align: "end",
                   offsetEnd: "5px",
                   contents: [],
                 },
+
+                //expense bar
                 {
                   type: "box",
                   layout: "horizontal",
-                  //calculate width (max width = 200px)
-                  width: `${calculateWidth(item.summary, data.list)}px`,
-                  backgroundColor: item.summary > 0 ? "#CAF2C9FF" : "#F5E8E8FF",
+                  //calculate width of expense bar
+                  width: `${
+                    (item.expense / (item.expense + item.income)) *
+                    calculateWidth(data.list, item.income, item.expense)
+                  }px`,
+                  backgroundColor: "#F5E8E8FF",
                   contents: [
                     {
                       type: "text",
                       text: ".",
-                      color: item.summary > 0 ? "#CAF2C9FF" : "#F5E8E8FF",
+                      color: "#F5E8E8FF",
+                      contents: [],
+                    },
+                  ],
+                },
+
+                //income bar
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  width: `${
+                    (item.income / (item.expense + item.income)) *
+                    calculateWidth(data.list, item.income, item.expense)
+                  }px`,
+                  backgroundColor: "#CAF2C9FF",
+                  contents: [
+                    {
+                      type: "text",
+                      text: ".",
+                      size: "xxs",
+                      color: "#CAF2C9FF",
                       contents: [],
                     },
                   ],
