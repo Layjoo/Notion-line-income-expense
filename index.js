@@ -2,6 +2,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 import {
+  createTagBubble,
   currentMonthAccoutingList,
   todayAccoutingList,
 } from "./message-object.js";
@@ -133,8 +134,16 @@ const messageHandeler = async (event) => {
   if (message === "สรุปรายจ่ายเดือนนี้") {
     const data = await getAccoutingListCurrentMonth(userId);
     const messages = [
-      { type: "text", text: "แตะที่วันที่เพื่อดูรายจ่าย" },
       currentMonthAccoutingList(data),
+    ];
+
+    await sendMessages(event.replyToken, messages);
+  }
+
+  //todo 
+  if (message === "tag") {
+    const messages = [
+      createTagBubble({detail: "น้ำปั่น"}, ["เครื่องดืม", "อาหาร", "เดินทาง", "อื่นๆ", "ทั้งหมด", "รายรับ", "รายจ่าย"]),
     ];
 
     await sendMessages(event.replyToken, messages);

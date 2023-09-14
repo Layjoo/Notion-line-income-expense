@@ -288,7 +288,7 @@ export const todayAccoutingList = (data) => {
               {
                 type: "text",
                 text: `${totalPrice} บาท`,
-                color:  totalPrice > 0 ? "#29BA24FF" : "#EA4444FF",
+                color: totalPrice > 0 ? "#29BA24FF" : "#EA4444FF",
                 weight: "bold",
                 size: "sm",
                 align: "end",
@@ -335,7 +335,7 @@ export const currentMonthAccoutingList = (data) => {
     return totalPrice;
   }
 
-  function findMaxSummaryLenght(data) {
+  function findMaxSumaryPrice(data) {
     let max = 0;
 
     data.forEach((item) => {
@@ -350,13 +350,20 @@ export const currentMonthAccoutingList = (data) => {
   }
 
   function calculateWidth(data, income, expense) {
-    const max = findMaxSummaryLenght(data);
-
-    const width = Math.floor(((income + expense) / max) * 180)
-    console.log(width)
-
-    return width;
+    const max = findMaxSumaryPrice(data);
+    return Math.floor(((income + expense) / max) * 180);
   }
+
+  const totalPrice = calculateTotalPrice(data.list);
+
+  const totalIncome = data.list.reduce((acc, item) => {
+    return acc + item.income;
+  }, 0);
+
+  const totalExpense = data.list.reduce((acc, item) => {
+    return acc + item.expense;
+  }, 0);
+
   return {
     type: "flex",
     altText: `รายจ่ายเดือนนี้ ${calculateTotalPrice(data.list).toString()} บาท`,
@@ -493,6 +500,7 @@ export const currentMonthAccoutingList = (data) => {
                 {
                   type: "box",
                   layout: "horizontal",
+                  //calculate width of income bar
                   width: `${
                     (item.income / (item.expense + item.income)) *
                     calculateWidth(data.list, item.income, item.expense)
@@ -523,6 +531,52 @@ export const currentMonthAccoutingList = (data) => {
             contents: [
               {
                 type: "text",
+                text: "รายรับทั้งหมด",
+                weight: "bold",
+                size: "sm",
+                contents: [],
+              },
+              {
+                type: "text",
+                text: `+${totalIncome} บาท`,
+                color: "#29BA24FF",
+                weight: "bold",
+                size: "sm",
+                align: "end",
+                contents: [],
+              },
+            ],
+          },
+          {
+            type: "box",
+            layout: "horizontal",
+            margin: "xs",
+            contents: [
+              {
+                type: "text",
+                text: "รายจ่ายทั้งหมด",
+                weight: "bold",
+                size: "sm",
+                contents: [],
+              },
+              {
+                type: "text",
+                text: `-${totalExpense} บาท`,
+                color: "#EA4444FF",
+                weight: "bold",
+                size: "sm",
+                align: "end",
+                contents: [],
+              },
+            ],
+          },
+          {
+            type: "box",
+            layout: "horizontal",
+            margin: "xs",
+            contents: [
+              {
+                type: "text",
                 text: "รวม",
                 weight: "bold",
                 size: "sm",
@@ -530,7 +584,8 @@ export const currentMonthAccoutingList = (data) => {
               },
               {
                 type: "text",
-                text: `${calculateTotalPrice(data.list).toString()} บาท`,
+                text: `${totalPrice} บาท`,
+                color: totalPrice > 0 ? "#29BA24FF" : "#EA4444FF",
                 weight: "bold",
                 size: "sm",
                 align: "end",
@@ -540,6 +595,153 @@ export const currentMonthAccoutingList = (data) => {
           },
         ],
       },
+      footer: {
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          {
+            type: "box",
+            layout: "vertical",
+            contents: [
+              {
+                type: "text",
+                text: "คำแนะนำ: แตะวันที่เพื่อดูรายละเอียด",
+                size: "xxs",
+                align: "center",
+                contents: [],
+              },
+            ],
+          },
+        ],
+      },
     },
+  };
+};
+
+export const createTagBubble = (item, tags) => {
+  function createEmptyHorizontalBox() {
+    return {
+      type: "box",
+      layout: "horizontal",
+      margin: "md",
+      contents: [],
+    };
+  }
+
+  function getTotalWidth(horizontalBox) {
+    return horizontalBox.contents.reduce((totalWidth, tag) => {
+      const boxWidth = parseInt(tag.width, 10);
+      return totalWidth + boxWidth;
+    }, 0);
+  }
+
+  const colors = ["#CAF2C9FF"];
+  const thaiVowels = [" ี", " ิ", " ึ", " ื", "่", "้", "๊", "๋"];
+  const vowelRegex = /[ีิึืุู่้๊๋]/g;
+
+  const bubble = {
+    type: "bubble",
+    direction: "ltr",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "เพิ่มหมวดหมู่",
+              weight: "bold",
+              size: "md",
+              color: "#29BA24FF",
+              contents: [],
+            },
+            {
+              type: "text",
+              text: item.detail,
+              size: "md",
+              gravity: "bottom",
+              margin: "md",
+              contents: [],
+            },
+          ],
+        },
+        {
+          type: "separator",
+          margin: "md",
+        },
+      ],
+    },
+    footer: {
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "คำแนะนำ: แตะที่วันที่เพื่อดูรายละเอียด",
+              size: "xxs",
+              align: "center",
+              contents: [],
+            },
+          ],
+        },
+      ],
+    },
+  };
+
+  let horizontalBox = createEmptyHorizontalBox(); // Initialize the first horizontal box
+
+  tags.forEach((tag, index) => {
+    const tagWithoutVowels = tag.replace(vowelRegex, "");
+    const color = colors[index % colors.length];
+    const boxWidth = 10 * tagWithoutVowels.length + 5;
+
+    if (getTotalWidth(horizontalBox) + boxWidth > 240) {
+      // Create a new horizontal box if the total width exceeds 250px
+      bubble.body.contents.push(horizontalBox);
+      horizontalBox = createEmptyHorizontalBox();
+    }
+
+    horizontalBox.contents.push({
+      type: "box",
+      layout: "vertical",
+      margin: "sm",
+      action: {
+        type: "postback",
+        label: "ดูประวัติวันที่",
+        text: "ดูประวัติวันที่",
+        data: "{}",
+      },
+      width: `${boxWidth}px`,
+      backgroundColor: color,
+      cornerRadius: "8px",
+      contents: [
+        {
+          type: "text",
+          text: tag,
+          size: "sm",
+          color: "#29BA24FF",
+          align: "center",
+          contents: [],
+        },
+      ],
+    });
+  });
+
+  // Add the last horizontal box if it's not empty
+  if (horizontalBox.contents.length > 0) {
+    bubble.body.contents.push(horizontalBox);
+  }
+
+  return {
+    type: "flex",
+    altText: `tag`,
+    contents: bubble,
   };
 };
