@@ -13,6 +13,13 @@ export const todayAccoutingList = (data) => {
     return totalPrice;
   }
 
+  function calculateWidthFromString(str) {
+    const thaiVowels = [" ี", " ิ", " ึ", " ื", "่", "้", "๊", "๋", "ุ", "ู"];
+    const vowelRegex = /[ีิึืุู่้๊๋]/g;
+    const strWithoutVowels = str.replace(vowelRegex, "");
+    return strWithoutVowels.length < 4 ? 30 : 8 * strWithoutVowels.length ;
+  }
+
   const totalPrice = calculateTotalPrice(data.list);
 
   const totalIncome = data.list.reduce((acc, item) => {
@@ -183,6 +190,31 @@ export const todayAccoutingList = (data) => {
                 contents: [],
               },
               {
+                type: "box",
+                layout: "vertical",
+                action: {
+                  type: "postback",
+                  label: `แก้ไขหมวดหมู่ ${item.detail}`,
+                  text: `แก้ไขหมวดหมู่ ${item.detail}`,
+                  data: `{"postback_type": "require_tag", "item": {"id": "${item.id}", "date": "${data.date}", "detail": "${item.detail}"}}`,
+                },
+                width: `${calculateWidthFromString(item.tag)}px`,
+                backgroundColor: "#CAF2C9FF",
+                cornerRadius: "8px",
+                paddingAll: "2px",
+                contents: [
+                  {
+                    type: "text",
+                    text: `${item.tag}`,
+                    size: "xxs",
+                    color: "#29BA24FF",
+                    align: "center",
+                    contents: [],
+                    offsetBottom: "1px",
+                  },
+                ],
+              },
+              {
                 type: "text",
                 text:
                   item.type === "expense" ? `-${item.price}` : `+${item.price}`,
@@ -316,6 +348,14 @@ export const todayAccoutingList = (data) => {
                 height: "sm",
                 style: "primary",
               },
+              {
+                type: "text",
+                text: "คำแนะนำ: แตะที่หมวดหมู่เพื่อแก้ไข หรือแตะลบเพื่อลบรายการ",
+                size: "xxs",
+                align: "center",
+                margin: "md",
+                contents: [],
+              }
             ],
           },
         ],
@@ -628,6 +668,12 @@ export const createTagBubble = (item, tags) => {
     };
   }
 
+  function calculateWidthFromString(str) {
+    const vowelRegex = /[ีิึืุู่้๊๋]/g;
+    const strWithoutVowels = str.replace(vowelRegex, "");
+    return strWithoutVowels.length < 4 ? 35 : 10 * strWithoutVowels.length ;
+  }
+
   function getTotalWidth(horizontalBox) {
     return horizontalBox.contents.reduce((totalWidth, tag) => {
       const boxWidth = parseInt(tag.width, 10);
@@ -636,8 +682,6 @@ export const createTagBubble = (item, tags) => {
   }
 
   const colors = ["#CAF2C9FF"];
-  const thaiVowels = [" ี", " ิ", " ึ", " ื", "่", "้", "๊", "๋"];
-  const vowelRegex = /[ีิึืุู่้๊๋]/g;
 
   const bubble = {
     type: "bubble",
@@ -652,7 +696,7 @@ export const createTagBubble = (item, tags) => {
           contents: [
             {
               type: "text",
-              text: "เพิ่มหมวดหมู่",
+              text: `แก้ไขรายการ ${item.detail}`,
               weight: "bold",
               size: "md",
               color: "#29BA24FF",
@@ -660,34 +704,15 @@ export const createTagBubble = (item, tags) => {
             },
             {
               type: "text",
-              text: item.detail,
-              size: "md",
+              text: "เลือกหมวดหมู่",
+              size: "sm",
               gravity: "bottom",
               margin: "md",
               contents: [],
             },
-          ],
-        },
-        {
-          type: "separator",
-          margin: "md",
-        },
-      ],
-    },
-    footer: {
-      type: "box",
-      layout: "horizontal",
-      contents: [
-        {
-          type: "box",
-          layout: "vertical",
-          contents: [
             {
-              type: "text",
-              text: "คำแนะนำ: แตะที่วันที่เพื่อดูรายละเอียด",
-              size: "xxs",
-              align: "center",
-              contents: [],
+              "type": "separator",
+              "margin": "md"
             },
           ],
         },
@@ -698,9 +723,8 @@ export const createTagBubble = (item, tags) => {
   let horizontalBox = createEmptyHorizontalBox(); // Initialize the first horizontal box
 
   tags.forEach((tag, index) => {
-    const tagWithoutVowels = tag.replace(vowelRegex, "");
     const color = colors[index % colors.length];
-    const boxWidth = 10 * tagWithoutVowels.length + 5;
+    const boxWidth = calculateWidthFromString(tag);
 
     if (getTotalWidth(horizontalBox) + boxWidth > 240) {
       // Create a new horizontal box if the total width exceeds 250px
@@ -714,9 +738,9 @@ export const createTagBubble = (item, tags) => {
       margin: "sm",
       action: {
         type: "postback",
-        label: "ดูประวัติวันที่",
-        text: "ดูประวัติวันที่",
-        data: "{}",
+        label: `${item.detail} จัดอยู่ในหมวด${tag}`,
+        text: `${item.detail} จัดอยู่ในหมวด${tag}`,
+        data: `{"postback_type": "edit_tag", "item_id": "${item.id}", "date": "${item.date}", "tag": "${tag}"}`,
       },
       width: `${boxWidth}px`,
       backgroundColor: color,
@@ -729,6 +753,7 @@ export const createTagBubble = (item, tags) => {
           color: "#29BA24FF",
           align: "center",
           contents: [],
+          offsetBottom: "1px",
         },
       ],
     });

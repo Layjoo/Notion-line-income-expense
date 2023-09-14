@@ -91,3 +91,13 @@ export const deleteItemById = async (id) => {
 
   return { error };
 };
+
+export const updateItemById = async (id, newData) => {
+  const { error } = await supabase
+    .from("Money list")
+    .update(newData)
+    .eq("id", id)
+    .select()
+
+  return { error };
+}

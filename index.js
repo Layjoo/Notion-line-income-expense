@@ -16,6 +16,7 @@ import {
   deleteItemById,
   getAccoutingListByDateAndUserId,
   getAccoutingListCurrentMonth,
+  updateItemById,
 } from "./supabase-api.js";
 
 //setting config for line client
@@ -101,6 +102,52 @@ const postbackHandeler = async (event) => {
     const messages = [todayAccoutingList(data)];
     await sendMessages(event.replyToken, messages);
   }
+
+  //user require tag
+  if (postbackData.postback_type === "require_tag") {
+    const messages = [
+      createTagBubble(postbackData.item, [
+        "เครื่องดื่ม",
+        "อาหาร",
+        "เดินทาง",
+        "ขนม",
+        "ของใช้",
+        "ค่าห้อง",
+        "น้ำไฟ",
+        "ซักผ้า",
+        "เสื้อผ้า",
+        "หนังสือ",
+        "เคสโฮม",
+        "เงินเดือน",
+        "โอที",
+        "อื่นๆ",
+      ]),
+    ];
+
+    await sendMessages(event.replyToken, messages);
+  }
+
+  //edit tag
+  if (postbackData.postback_type === "edit_tag") {
+    const tag = postbackData.tag;
+    const item_id = postbackData.item_id;
+    const dateOfItem = postbackData.date;
+
+    const { error } = await updateItemById(item_id, { tag: tag });
+
+    if (error) {
+      const messages = { type: "text", text: "เปลี่ยนหมวดหมู่ไม่สำเร็จ" };
+      return await sendMessages(event.replyToken, messages);
+    }
+
+    //if item is deleted, send new list to user
+    const data = await getAccoutingListByDateAndUserId(
+      moment(dateOfItem).format("YYYY-MM-DD"),
+      userId
+    );
+    const messages = [todayAccoutingList(data)];
+    await sendMessages(event.replyToken, messages);
+  }
 };
 
 const followHandeler = async (event) => {
@@ -133,18 +180,7 @@ const messageHandeler = async (event) => {
   //other type of message
   if (message === "สรุปรายจ่ายเดือนนี้") {
     const data = await getAccoutingListCurrentMonth(userId);
-    const messages = [
-      currentMonthAccoutingList(data),
-    ];
-
-    await sendMessages(event.replyToken, messages);
-  }
-
-  //todo 
-  if (message === "tag") {
-    const messages = [
-      createTagBubble({detail: "น้ำปั่น"}, ["เครื่องดืม", "อาหาร", "เดินทาง", "อื่นๆ", "ทั้งหมด", "รายรับ", "รายจ่าย"]),
-    ];
+    const messages = [currentMonthAccoutingList(data)];
 
     await sendMessages(event.replyToken, messages);
   }
