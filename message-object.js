@@ -14,10 +14,9 @@ export const todayAccoutingList = (data) => {
   }
 
   function calculateWidthFromString(str) {
-    const thaiVowels = [" ี", " ิ", " ึ", " ื", "่", "้", "๊", "๋", "ุ", "ู"];
     const vowelRegex = /[ีิึืุู่้๊๋]/g;
     const strWithoutVowels = str.replace(vowelRegex, "");
-    return strWithoutVowels.length < 4 ? 30 : 8 * strWithoutVowels.length ;
+    return strWithoutVowels.length < 4 ? 30 : 8 * strWithoutVowels.length;
   }
 
   const totalPrice = calculateTotalPrice(data.list);
@@ -184,33 +183,23 @@ export const todayAccoutingList = (data) => {
             margin: "md",
             contents: [
               {
-                type: "text",
-                text: item.detail === "" ? "ไม่มีรายละเอียด" : item.detail,
-                size: "sm",
-                contents: [],
-              },
-              {
                 type: "box",
                 layout: "vertical",
-                action: {
-                  type: "postback",
-                  label: `แก้ไขหมวดหมู่ ${item.detail}`,
-                  text: `แก้ไขหมวดหมู่ ${item.detail}`,
-                  data: `{"postback_type": "require_tag", "item": {"id": "${item.id}", "date": "${data.date}", "detail": "${item.detail}"}}`,
-                },
-                width: `${calculateWidthFromString(item.tag)}px`,
-                backgroundColor: "#CAF2C9FF",
-                cornerRadius: "8px",
-                paddingAll: "2px",
+                width: "180px",
                 contents: [
                   {
                     type: "text",
-                    text: `${item.tag}`,
-                    size: "xxs",
-                    color: "#29BA24FF",
-                    align: "center",
+                    text: `${
+                      item.detail === "" ? "ไม่มีรายละเอียด" : item.detail
+                    } (${item.tag})`,
+                    size: "sm",
+                    action: {
+                      type: "postback",
+                      label: `แก้ไขหมวดหมู่ ${item.detail}`,
+                      text: `แก้ไขหมวดหมู่ ${item.detail}`,
+                      data: `{"postback_type": "require_tag", "item": {"id": "${item.id}", "date": "${data.date}", "detail": "${item.detail}"}}`,
+                    },
                     contents: [],
-                    offsetBottom: "1px",
                   },
                 ],
               },
@@ -350,12 +339,12 @@ export const todayAccoutingList = (data) => {
               },
               {
                 type: "text",
-                text: "คำแนะนำ: แตะที่หมวดหมู่เพื่อแก้ไข หรือแตะลบเพื่อลบรายการ",
+                text: "คำแนะนำ: แตะที่รายการเพื่อแก้ไขหมวดหมู่",
                 size: "xxs",
                 align: "center",
                 margin: "md",
                 contents: [],
-              }
+              },
             ],
           },
         ],
@@ -671,7 +660,7 @@ export const createTagBubble = (item, tags) => {
   function calculateWidthFromString(str) {
     const vowelRegex = /[ีิึืุู่้๊๋]/g;
     const strWithoutVowels = str.replace(vowelRegex, "");
-    return strWithoutVowels.length < 4 ? 35 : 10 * strWithoutVowels.length ;
+    return strWithoutVowels.length < 4 ? 35 : 10 * strWithoutVowels.length;
   }
 
   function getTotalWidth(horizontalBox) {
@@ -681,7 +670,7 @@ export const createTagBubble = (item, tags) => {
     }, 0);
   }
 
-  const colors = ["#CAF2C9FF"];
+  const colors = [{bg:"#F5E8E8FF", text: "#EA4444FF"}];
 
   const bubble = {
     type: "bubble",
@@ -711,8 +700,8 @@ export const createTagBubble = (item, tags) => {
               contents: [],
             },
             {
-              "type": "separator",
-              "margin": "md"
+              type: "separator",
+              margin: "md",
             },
           ],
         },
@@ -723,7 +712,8 @@ export const createTagBubble = (item, tags) => {
   let horizontalBox = createEmptyHorizontalBox(); // Initialize the first horizontal box
 
   tags.forEach((tag, index) => {
-    const color = colors[index % colors.length];
+    const bgColor = colors[index % colors.length].bg;
+    const textColor = colors[index % colors.length].text;
     const boxWidth = calculateWidthFromString(tag);
 
     if (getTotalWidth(horizontalBox) + boxWidth > 240) {
@@ -743,14 +733,14 @@ export const createTagBubble = (item, tags) => {
         data: `{"postback_type": "edit_tag", "item_id": "${item.id}", "date": "${item.date}", "tag": "${tag}"}`,
       },
       width: `${boxWidth}px`,
-      backgroundColor: color,
+      backgroundColor: bgColor,
       cornerRadius: "8px",
       contents: [
         {
           type: "text",
           text: tag,
           size: "sm",
-          color: "#29BA24FF",
+          color: textColor,
           align: "center",
           contents: [],
           offsetBottom: "1px",

@@ -262,7 +262,7 @@ const parseAccoutingMessage = (message) => {
       const type = keyword === "จ่ายเงินค่า" ? "expense" : "income";
       const detail = detailRegex.exec(message)[0] || "";
       const price = parseInt(message.match(priceRegex)[0] || 0);
-      const tag = "others";
+      const tag = "อื่นๆ";
       const date = moment().format("YYYY-MM-DD");
 
       accountingData = { date, detail, tag, price, type };
