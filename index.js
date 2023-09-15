@@ -4,6 +4,8 @@ dotenv.config();
 import {
   createTagBubble,
   currentMonthAccoutingList,
+  currentMonthTag,
+  tagAccountingList,
   todayAccoutingList,
 } from "./message-object.js";
 import line from "@line/bot-sdk";
@@ -16,7 +18,9 @@ import {
   addUserToDB,
   deleteItemById,
   getAccoutingListByDateAndUserId,
+  getAccoutingListByTag,
   getAccoutingListCurrentMonth,
+  getCurrentMonthTagsSummary,
   getSettingTags,
   serchUserById,
   updateItemById,
@@ -163,6 +167,20 @@ const postbackHandeler = async (event) => {
       userId
     );
     const messages = [todayAccoutingList(data)];
+    await sendMessages(event.replyToken, messages);
+  }
+
+  //tag history
+  if (postbackData.postback_type === "history_tag") {
+    const tag = postbackData.tag;
+    const month = postbackData.month;
+    const { data, error } = await getAccoutingListByTag(tag, userId);
+    if (error) {
+      console.error("Error fetching data:", error.message);
+    }
+
+    const messages = [tagAccountingList(data, tag, month)];
+
     await sendMessages(event.replyToken, messages);
   }
 };
@@ -346,6 +364,15 @@ const messageHandeler = async (event) => {
         text: "รายการจะถูกบันทึกเป็นของวันที่ส่งข้อความเท่านั้น",
       },
     ];
+
+    await sendMessages(event.replyToken, messages);
+  }
+
+  if (message === "สรุปหมวดหมู่เดือนนี้") {
+    const data = await getCurrentMonthTagsSummary(userId);
+    console.log(data);
+
+    const messages = [currentMonthTag(data)];
 
     await sendMessages(event.replyToken, messages);
   }
