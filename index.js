@@ -13,10 +13,14 @@ const port = process.env.PORT || 3000;
 const app = express();
 import {
   addListToDB,
+  addUserToDB,
   deleteItemById,
   getAccoutingListByDateAndUserId,
   getAccoutingListCurrentMonth,
+  getSettingTags,
+  serchUserById,
   updateItemById,
+  updateSettingTags,
 } from "./supabase-api.js";
 
 //setting config for line client
@@ -47,6 +51,7 @@ app.get("/waking", async (req, res) => {
 //event handler if user interaction with bot
 async function handleEvent(event) {
   const eventType = event.type;
+  console.log(` ------------ New event ------------ \n`);
   console.log(event);
 
   switch (eventType) {
@@ -105,23 +110,35 @@ const postbackHandeler = async (event) => {
 
   //user require tag
   if (postbackData.postback_type === "require_tag") {
+    const { data: allTags, error } = await getSettingTags(userId);
+
+    if (error) {
+      console.error("Error fetching data:", error.message);
+    }
+
+    //if no tag found, then show placeholder tag first
     const messages = [
-      createTagBubble(postbackData.item, [
-        "เครื่องดื่ม",
-        "อาหาร",
-        "เดินทาง",
-        "ขนม",
-        "ของใช้",
-        "ค่าห้อง",
-        "น้ำไฟ",
-        "ซักผ้า",
-        "เสื้อผ้า",
-        "หนังสือ",
-        "เคสโฮม",
-        "เงินเดือน",
-        "โอที",
-        "อื่นๆ",
-      ]),
+      createTagBubble(
+        postbackData.item,
+        allTags
+          ? allTags
+          : [
+              "เครื่องดื่ม",
+              "อาหาร",
+              "เดินทาง",
+              "ขนม",
+              "ของใช้",
+              "ค่าห้อง",
+              "น้ำ-ไฟ",
+              "ซักผ้า",
+              "เสื้อผ้า",
+              "หนังสือ",
+              "เคสโฮม",
+              "เงินเดือน",
+              "โอที",
+              "อื่นๆ",
+            ]
+      ),
     ];
 
     await sendMessages(event.replyToken, messages);
@@ -153,7 +170,49 @@ const postbackHandeler = async (event) => {
 const followHandeler = async (event) => {
   const userId = event.source.userId;
   console.log("New user followed: " + userId);
-  return;
+
+  //check if user is already in database
+  const { data: user, error } = await serchUserById(userId);
+  if (error) {
+    console.error("Error fetching data:", error.message);
+
+    const messages = [
+      {
+        type: "text",
+        text: "เกิดข้อผิดพลาดในการเพิ่มผู้ใช้ใหม่",
+      },
+    ];
+
+    return await sendMessages(event.replyToken, messages);
+  }
+
+  if (user.length === 0) {
+    //add new user to database if not exist
+    const { error } = await addUserToDB(userId);
+    if (error) {
+      console.error("Error fetching data:", error.message);
+
+      const messages = [
+        {
+          type: "text",
+          text: "เกิดข้อผิดพลาดในการเพิ่มผู้ใช้ใหม่",
+        },
+      ];
+
+      return await sendMessages(event.replyToken, messages);
+    }
+  }
+
+  //send welcome message
+  const data = await getAccoutingListByDateAndUserId(
+    moment().format("YYYY-MM-DD"),
+    userId
+  );
+
+  return await sendMessages(event.replyToken, [
+    { type: "text", text: "ยินดีต้อนรับเข้าสู่บอทบันทึกรายรับรายจ่าย" },
+    todayAccoutingList(data),
+  ]);
 };
 
 const messageHandeler = async (event) => {
@@ -175,6 +234,42 @@ const messageHandeler = async (event) => {
     const messages = [todayAccoutingList(data)];
 
     await sendMessages(event.replyToken, messages);
+  }
+
+  //check if message is add new tag message ex. เพิ่ม tag อื่นๆ
+  const tag = parseAddNewTagMessage(message);
+  if (tag) {
+    if (tag.type === "add_tag") {
+      const { error } = await updateSettingTags(userId, tag.tag, "add");
+
+      if (error) console.error("Error fetching data:", error.message);
+
+      const messages = [
+        {
+          type: "text",
+          text: error
+            ? `เพิ่มหมวดหมู่ไม่สำเร็จ`
+            : `เพิ่มหมวดหมู่ ${tag.tag} สำเร็จ`,
+        },
+      ];
+
+      await sendMessages(event.replyToken, messages);
+    }
+
+    if (tag.type === "delete_tag") {
+      const { error } = await updateSettingTags(userId, tag.tag, "delete");
+
+      if (error) console.error("Error fetching data:", error.message);
+
+      const messages = [
+        {
+          type: "text",
+          text: error ? `ลบหมวดหมู่ไม่สำเร็จ` : `ลบหมวดหมู่ ${tag.tag} สำเร็จ`,
+        },
+      ];
+
+      await sendMessages(event.replyToken, messages);
+    }
   }
 
   //other type of message
@@ -227,16 +322,28 @@ const messageHandeler = async (event) => {
       {
         type: "text",
         text:
-          "ตัวอย่างสร้างรายจ่าย พิมพ์ว่า จ่ายเงินค่า(อะไร) (ราคา) บาท" +
+          "สร้างรายจ่าย พิมพ์ว่า" +
           "\n" +
-          "เช่น จ่ายเงินค่าอาหาร 100 บาท",
+          '"จ่ายเงินค่า(อะไร) (ราคา) บาท"' +
+          "\n" +
+          "ตัวอย่าง" +
+          "\n" +
+          '"จ่ายเงินค่าอาหาร 100 บาท"',
       },
       {
         type: "text",
         text:
-          "ตัวอย่างสร้างรายรับ พิมพ์ว่า ได้เงินค่า(อะไร) (ราคา) บาท" +
+          "สร้างรายรับ พิมพ์ว่า" +
           "\n" +
-          "เช่น ได้เงินค่าขายของ 200 บาท",
+          '"ได้เงินค่า(อะไร) (ราคา) บาท"' +
+          "\n" +
+          "ตัวอย่าง" +
+          "\n" +
+          '"ได้เงินค่าขายของ 200 บาท"',
+      },
+      {
+        type: "text",
+        text: "รายการจะถูกบันทึกเป็นของวันที่ส่งข้อความเท่านั้น",
       },
     ];
 
@@ -270,6 +377,29 @@ const parseAccoutingMessage = (message) => {
   });
 
   return accountingData;
+};
+
+const parseAddNewTagMessage = (message) => {
+  const keywords = ["เพิ่ม tag", "ลบ tag"];
+
+  let tagData;
+  keywords.forEach((keyword) => {
+    if (message.includes(keyword)) {
+      const messageWithOutSpace = message.replace(/ /g, "");
+      const tagRegex = /(?<=เพิ่มtag|ลบtag).*/;
+      const tag = tagRegex.exec(messageWithOutSpace)[0] || "";
+
+      if (message.includes("เพิ่ม tag")) {
+        tagData = { tag: tag, type: "add_tag" };
+      }
+
+      if (message.includes("ลบ tag")) {
+        tagData = { tag: tag, type: "delete_tag" };
+      }
+    }
+  });
+
+  return tagData;
 };
 
 app.listen(port, () => {

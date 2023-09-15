@@ -1,6 +1,7 @@
 import { supabase } from "./supabase-init.js";
 import moment from "moment";
 
+//function for accounting
 export const getAccoutingListByDateAndUserId = async (date, userId) => {
   const { data: moneyList, error } = await supabase
     .from("Money list")
@@ -97,7 +98,79 @@ export const updateItemById = async (id, newData) => {
     .from("Money list")
     .update(newData)
     .eq("id", id)
-    .select()
+    .select();
 
   return { error };
-}
+};
+
+//function for setting
+export const addUserToDB = async (userId) => {
+  const { data, error } = await supabase
+    .from("User")
+    .insert([{ user_id: userId }])
+    .select();
+
+  return { data, error };
+};
+
+export const serchUserById = async (userId) => {
+  const { data, error } = await supabase
+    .from("User")
+    .select("*")
+    .eq("user_id", userId);
+
+  return { data, error };
+};
+
+export const getSettingTags = async (userId) => {
+  const { data, error } = await supabase
+    .from("User")
+    .select('setting_tags')
+    .eq("user_id", userId);
+
+    const allTags = data[0]?.setting_tags;
+
+    if(!allTags) {
+      const { error } = await addUserToDB(userId);
+      if (error) { console.error("Error fetching data:", error.message);}else{
+      console.log("Add new user complete")}
+    }
+
+  return { data: allTags, error };
+};
+
+export const updateSettingTags = async (userId, tags, type) => {
+  //get previous tags
+  const { data: allTags, error: getTagError } = await getSettingTags(userId);
+
+  if(error) {
+    console.log(error)
+  }
+
+  console.log(allTags);
+  if (getTagError) {
+    console.error("Error fetching data:", getTagError.message);
+    return { error: getTagError };
+  }
+
+  //update tags
+  if (type === "add") {
+    const { error } = await supabase
+      .from("User")
+      .update({ setting_tags: [...allTags, tags] })
+      .eq("user_id", userId)
+      .select();
+
+    return { error };
+  }
+
+  if (type === "delete") {
+    const { error } = await supabase
+      .from("User")
+      .update({ setting_tags: allTags.filter((tag) => tag !== tags) })
+      .eq("user_id", userId)
+      .select();
+
+    return { error };
+  }
+};

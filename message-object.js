@@ -707,6 +707,34 @@ export const createTagBubble = (item, tags) => {
         },
       ],
     },
+    footer: {
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "คำแนะนำ: เพิ่มหมวดหมู่ พิมพ์ว่า เพิ่ม tag (หมวดหมู่)",
+              size: "xxs",
+              align: "center",
+              margin: "md",
+              contents: [],
+            },
+            {
+              type: "text",
+              text: "ลบหมวดหมู่ พิมพ์ว่า ลบ tag (หมวดหมู่)",
+              size: "xxs",
+              align: "center",
+              margin: "md",
+              contents: [],
+            },
+          ],
+        },
+      ],
+    },
   };
 
   let horizontalBox = createEmptyHorizontalBox(); // Initialize the first horizontal box
