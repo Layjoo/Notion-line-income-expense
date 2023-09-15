@@ -1004,7 +1004,7 @@ export const currentMonthTag = (data) => {
 
 export const tagAccountingList = (data, tag, month) => {
 
-  // Split array into multiple arrays (add new array every 15 items)
+  // split array into multiple arrays (add new array every 15 items)
   const messages = [];
   const splitData = splitArray(data);
 
@@ -1082,10 +1082,6 @@ export const tagAccountingList = (data, tag, month) => {
     ];
 
     const summary = [
-      {
-        type: "separator",
-        margin: "md",
-      },
       {
         type: "box",
         layout: "horizontal",
@@ -1242,7 +1238,7 @@ export const tagAccountingList = (data, tag, month) => {
                     type: "postback",
                     label: "ลบรายการ",
                     text: `ลบรายการ ${item.detail}`,
-                    data: `{"postback_type": "delete_item", "delete_item_id": "${item.id}", "date": "${data.date}"}`,
+                    data: `{"postback_type": "delete_item", "delete_item_id": "${item.id}", "date": "${item.date}", "redirect": "history_tag", "tag": "${tag}", "month": "${month}"}`,
                   },
                   width: "50px",
                   backgroundColor: "#F5E8E8FF",
@@ -1276,6 +1272,8 @@ export const tagAccountingList = (data, tag, month) => {
       },
     };
 
+    // Add header and footer to the first and last message
+    if (data.length !== 0) summary.unshift({ type: "separator", margin: "md" });
     if (index === 0) fullmessage.contents.body.contents.unshift(...header);
     if (index === splitData.length - 1) {
       fullmessage.contents.footer.contents.unshift(...footer);
@@ -1286,6 +1284,7 @@ export const tagAccountingList = (data, tag, month) => {
 
   return messages;
 
+  //other functions
   function splitArray(data) {
     //split array
     const maxLength = 15;

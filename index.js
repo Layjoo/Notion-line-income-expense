@@ -94,6 +94,7 @@ const postbackHandeler = async (event) => {
   if (postbackData.postback_type === "delete_item") {
     const idToDelete = parseInt(postbackData.delete_item_id);
     const dateOfItem = postbackData.date;
+    const redirect = postbackData.redirect;
 
     //delete item from database
     const { error } = await deleteItemById(idToDelete);
@@ -103,13 +104,26 @@ const postbackHandeler = async (event) => {
       return await sendMessages(event.replyToken, messages);
     }
 
-    //if item is deleted, send new list to user
+    //if item is deleted, send redirect or accounting list to user
+    if (redirect === "history_tag") {
+      const tag = postbackData.tag;
+      const month = postbackData.month;
+      const { data, error } = await getAccoutingListByTag(tag, userId);
+
+      if (error) {
+        return console.error("Error fetching data:", error.message);
+      }
+
+      const messages = tagAccountingList(data, tag, month);
+      return await sendMessages(event.replyToken, messages);
+    }
+
     const data = await getAccoutingListByDateAndUserId(
       moment(dateOfItem).format("YYYY-MM-DD"),
       userId
     );
     const messages = [todayAccoutingList(data)];
-    await sendMessages(event.replyToken, messages);
+    return await sendMessages(event.replyToken, messages);
   }
 
   //user require tag
