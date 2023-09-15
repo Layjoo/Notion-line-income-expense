@@ -1003,6 +1003,305 @@ export const currentMonthTag = (data) => {
 };
 
 export const tagAccountingList = (data, tag, month) => {
+
+  // Split array into multiple arrays (add new array every 15 items)
+  const messages = [];
+  const splitData = splitArray(data);
+
+  // Calculate total price
+  const totalPrice = calculateTotalPrice(data);
+  const totalIncome = data.reduce((acc, item) => {
+    if (item.type === "income") {
+      return acc + item.price;
+    }
+    return acc;
+  }, 0);
+  const totalExpense = data.reduce((acc, item) => {
+    if (item.type === "expense") {
+      return acc + item.price;
+    }
+    return acc;
+  }, 0);
+
+  // Generate dynamic message
+  splitData.forEach((data, index) => {
+    const header = [
+      {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "text",
+            text: `รายการในหมวดหมู่ ${tag}`,
+            weight: "bold",
+            size: "md",
+            color: "#29BA24FF",
+            contents: [],
+          },
+          {
+            type: "text",
+            text: `เดือน ${moment(month).locale("th").format("MMMM YYYY")}`,
+            size: "md",
+            gravity: "bottom",
+            margin: "md",
+            contents: [],
+          },
+        ],
+      },
+      {
+        type: "separator",
+        margin: "md",
+      },
+    ];
+
+    const footer = [
+      {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "button",
+            action: {
+              type: "message",
+              label: "สรุปรายจ่ายเดือนนี้",
+              text: "สรุปรายจ่ายเดือนนี้",
+            },
+            height: "sm",
+            style: "primary",
+          },
+          {
+            type: "text",
+            text: "คำแนะนำ: แตะที่รายการเพื่อแก้ไขหมวดหมู่",
+            size: "xxs",
+            align: "center",
+            margin: "md",
+            contents: [],
+          },
+        ],
+      },
+    ];
+
+    const summary = [
+      {
+        type: "separator",
+        margin: "md",
+      },
+      {
+        type: "box",
+        layout: "horizontal",
+        margin: "md",
+        contents: [
+          {
+            type: "text",
+            text: "รายรับทั้งหมด",
+            weight: "bold",
+            size: "sm",
+            contents: [],
+          },
+          {
+            type: "text",
+            text: `+${totalIncome} บาท`,
+            color: "#29BA24FF",
+            weight: "bold",
+            size: "sm",
+            align: "end",
+            contents: [],
+          },
+        ],
+      },
+      {
+        type: "box",
+        layout: "horizontal",
+        margin: "xs",
+        contents: [
+          {
+            type: "text",
+            text: "รายจ่ายทั้งหมด",
+            weight: "bold",
+            size: "sm",
+            contents: [],
+          },
+          {
+            type: "text",
+            text: `-${totalExpense} บาท`,
+            color: "#EA4444FF",
+            weight: "bold",
+            size: "sm",
+            align: "end",
+            contents: [],
+          },
+        ],
+      },
+      {
+        type: "box",
+        layout: "horizontal",
+        margin: "xs",
+        contents: [
+          {
+            type: "text",
+            text: "รวม",
+            weight: "bold",
+            size: "sm",
+            contents: [],
+          },
+          {
+            type: "text",
+            text: `${totalPrice} บาท`,
+            color: totalPrice > 0 ? "#29BA24FF" : "#EA4444FF",
+            weight: "bold",
+            size: "sm",
+            align: "end",
+            contents: [],
+          },
+        ],
+      },
+    ];
+
+    const fullmessage = {
+      type: "flex",
+      altText: `รายจ่ายในหมวดหมู่ ${tag} เดือน ${moment(month)
+        .locale("th")
+        .format("MMMM YYYY")}`,
+      contents: {
+        type: "bubble",
+        direction: "ltr",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "box",
+              layout: "horizontal",
+              margin: "sm",
+              contents: [
+                {
+                  type: "text",
+                  text: "รายละเอียด",
+                  weight: "bold",
+                  size: "sm",
+                  contents: [],
+                },
+                {
+                  type: "text",
+                  text: "ราคา",
+                  weight: "bold",
+                  size: "sm",
+                  align: "end",
+                  offsetEnd: "55px",
+                  contents: [],
+                },
+              ],
+            },
+            {
+              type: "separator",
+              margin: "sm",
+            },
+            // Generate dynamic detail sections
+            ...data.map((item) => ({
+              type: "box",
+              layout: "horizontal",
+              margin: "md",
+              contents: [
+                {
+                  type: "box",
+                  layout: "vertical",
+                  width: "160px",
+                  contents: [
+                    {
+                      type: "text",
+                      text: `${
+                        item.detail === "" ? "ไม่มีรายละเอียด" : item.detail
+                      } (${item.tag})`,
+                      size: "sm",
+                      action: {
+                        type: "postback",
+                        label: `แก้ไขหมวดหมู่ ${item.detail}`,
+                        text: `แก้ไขหมวดหมู่ ${item.detail}`,
+                        data: `{"postback_type": "require_tag", "item": {"id": "${item.id}", "date": "${item.date}", "detail": "${item.detail}"}}`,
+                      },
+                      contents: [],
+                    },
+                  ],
+                },
+                {
+                  type: "text",
+                  text:
+                    item.type === "expense"
+                      ? `-${item.price}`
+                      : `+${item.price}`,
+                  size: "sm",
+                  color: item.type === "expense" ? "#EA4444FF" : "#29BA24FF",
+                  align: "end",
+                  offsetEnd: "8px",
+                  contents: [],
+                },
+                {
+                  type: "box",
+                  layout: "vertical",
+                  action: {
+                    type: "postback",
+                    label: "ลบรายการ",
+                    text: `ลบรายการ ${item.detail}`,
+                    data: `{"postback_type": "delete_item", "delete_item_id": "${item.id}", "date": "${data.date}"}`,
+                  },
+                  width: "50px",
+                  backgroundColor: "#F5E8E8FF",
+                  cornerRadius: "10px",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "ลบ",
+                      size: "sm",
+                      color: "#EA4444FF",
+                      align: "center",
+                      gravity: "center",
+                      contents: [],
+                      offsetBottom: "3px",
+                    },
+                  ],
+                  justifyContent: "center",
+                  alignItems: "center",
+                },
+              ],
+              justifyContent: "center",
+              alignItems: "center",
+            })),
+          ],
+        },
+        footer: {
+          type: "box",
+          layout: "horizontal",
+          contents: [],
+        },
+      },
+    };
+
+    if (index === 0) fullmessage.contents.body.contents.unshift(...header);
+    if (index === checkData.length - 1) {
+      fullmessage.contents.footer.contents.unshift(...footer);
+      fullmessage.contents.body.contents.push(...summary);
+    }
+    return messages.push(fullmessage);
+  });
+
+  return messages;
+
+  function splitArray(data) {
+    //split array
+    const maxLength = 15;
+    if (data.length > maxLength) {
+      const splitArrays = [];
+
+      for (let i = 0; i < data.length; i += maxLength) {
+        splitArrays.push(data.slice(i, i + maxLength));
+      }
+
+      return splitArrays;
+    }
+
+    return [data];
+  }
+
   function calculateTotalPrice(data) {
     let totalPrice = 0;
 
@@ -1013,261 +1312,4 @@ export const tagAccountingList = (data, tag, month) => {
 
     return totalPrice;
   }
-
-  const totalPrice = calculateTotalPrice(data);
-
-  const totalIncome = data.reduce((acc, item) => {
-    if (item.type === "income") {
-      return acc + item.price;
-    }
-    return acc;
-  }, 0);
-
-  const totalExpense = data.reduce((acc, item) => {
-    if (item.type === "expense") {
-      return acc + item.price;
-    }
-    return acc;
-  }, 0);
-
-  return {
-    type: "flex",
-    altText: `รายจ่ายในหมวดหมู่ ${tag} เดือน ${moment(month)
-      .locale("th")
-      .format("MMMM YYYY")}`,
-    contents: {
-      type: "bubble",
-      direction: "ltr",
-      body: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "text",
-                text: `รายการในหมวดหมู่ ${tag}`,
-                weight: "bold",
-                size: "md",
-                color: "#29BA24FF",
-                contents: [],
-              },
-              {
-                type: "text",
-                text: `เดือน ${moment(month).locale("th").format("MMMM YYYY")}`,
-                size: "md",
-                gravity: "bottom",
-                margin: "md",
-                contents: [],
-              },
-            ],
-          },
-          {
-            type: "separator",
-            margin: "md",
-          },
-          {
-            type: "box",
-            layout: "horizontal",
-            margin: "sm",
-            contents: [
-              {
-                type: "text",
-                text: "รายละเอียด",
-                weight: "bold",
-                size: "sm",
-                contents: [],
-              },
-              {
-                type: "text",
-                text: "ราคา",
-                weight: "bold",
-                size: "sm",
-                align: "end",
-                offsetEnd: "55px",
-                contents: [],
-              },
-            ],
-          },
-          {
-            type: "separator",
-            margin: "sm",
-          },
-          // Generate dynamic detail sections
-          ...data.map((item) => ({
-            type: "box",
-            layout: "horizontal",
-            margin: "md",
-            contents: [
-              {
-                type: "box",
-                layout: "vertical",
-                width: "160px",
-                contents: [
-                  {
-                    type: "text",
-                    text: `${
-                      item.detail === "" ? "ไม่มีรายละเอียด" : item.detail
-                    } (${item.tag})`,
-                    size: "sm",
-                    action: {
-                      type: "postback",
-                      label: `แก้ไขหมวดหมู่ ${item.detail}`,
-                      text: `แก้ไขหมวดหมู่ ${item.detail}`,
-                      data: `{"postback_type": "require_tag", "item": {"id": "${item.id}", "date": "${item.date}", "detail": "${item.detail}"}}`,
-                    },
-                    contents: [],
-                  },
-                ],
-              },
-              {
-                type: "text",
-                text:
-                  item.type === "expense" ? `-${item.price}` : `+${item.price}`,
-                size: "sm",
-                color: item.type === "expense" ? "#EA4444FF" : "#29BA24FF",
-                align: "end",
-                offsetEnd: "8px",
-                contents: [],
-              },
-              {
-                type: "box",
-                layout: "vertical",
-                action: {
-                  type: "postback",
-                  label: "ลบรายการ",
-                  text: `ลบรายการ ${item.detail}`,
-                  data: `{"postback_type": "delete_item", "delete_item_id": "${item.id}", "date": "${data.date}"}`,
-                },
-                width: "50px",
-                backgroundColor: "#F5E8E8FF",
-                cornerRadius: "10px",
-                contents: [
-                  {
-                    type: "text",
-                    text: "ลบ",
-                    size: "sm",
-                    color: "#EA4444FF",
-                    align: "center",
-                    gravity: "center",
-                    contents: [],
-                    offsetBottom: "3px",
-                  },
-                ],
-                justifyContent: "center",
-                alignItems: "center",
-              },
-            ],
-            justifyContent: "center",
-            alignItems: "center",
-          })),
-          {
-            type: "separator",
-            margin: "md",
-          },
-          {
-            type: "box",
-            layout: "horizontal",
-            margin: "md",
-            contents: [
-              {
-                type: "text",
-                text: "รายรับทั้งหมด",
-                weight: "bold",
-                size: "sm",
-                contents: [],
-              },
-              {
-                type: "text",
-                text: `+${totalIncome} บาท`,
-                color: "#29BA24FF",
-                weight: "bold",
-                size: "sm",
-                align: "end",
-                contents: [],
-              },
-            ],
-          },
-          {
-            type: "box",
-            layout: "horizontal",
-            margin: "xs",
-            contents: [
-              {
-                type: "text",
-                text: "รายจ่ายทั้งหมด",
-                weight: "bold",
-                size: "sm",
-                contents: [],
-              },
-              {
-                type: "text",
-                text: `-${totalExpense} บาท`,
-                color: "#EA4444FF",
-                weight: "bold",
-                size: "sm",
-                align: "end",
-                contents: [],
-              },
-            ],
-          },
-          {
-            type: "box",
-            layout: "horizontal",
-            margin: "xs",
-            contents: [
-              {
-                type: "text",
-                text: "รวม",
-                weight: "bold",
-                size: "sm",
-                contents: [],
-              },
-              {
-                type: "text",
-                text: `${totalPrice} บาท`,
-                color: totalPrice > 0 ? "#29BA24FF" : "#EA4444FF",
-                weight: "bold",
-                size: "sm",
-                align: "end",
-                contents: [],
-              },
-            ],
-          },
-        ],
-      },
-      footer: {
-        type: "box",
-        layout: "horizontal",
-        contents: [
-          {
-            type: "box",
-            layout: "vertical",
-            contents: [
-              {
-                type: "button",
-                action: {
-                  type: "message",
-                  label: "สรุปรายจ่ายเดือนนี้",
-                  text: "สรุปรายจ่ายเดือนนี้",
-                },
-                height: "sm",
-                style: "primary",
-              },
-              {
-                type: "text",
-                text: "คำแนะนำ: แตะที่รายการเพื่อแก้ไขหมวดหมู่",
-                size: "xxs",
-                align: "center",
-                margin: "md",
-                contents: [],
-              },
-            ],
-          },
-        ],
-      },
-    },
-  };
 };

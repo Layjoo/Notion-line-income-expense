@@ -175,13 +175,13 @@ const postbackHandeler = async (event) => {
     const tag = postbackData.tag;
     const month = postbackData.month;
     const { data, error } = await getAccoutingListByTag(tag, userId);
+
     if (error) {
-      console.error("Error fetching data:", error.message);
+      return console.error("Error fetching data:", error.message);
     }
 
-    const messages = [tagAccountingList(data, tag, month)];
-
-    await sendMessages(event.replyToken, messages);
+    const messages = tagAccountingList(data, tag, month);
+    return await sendMessages(event.replyToken, messages);
   }
 };
 
