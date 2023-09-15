@@ -1277,7 +1277,7 @@ export const tagAccountingList = (data, tag, month) => {
     };
 
     if (index === 0) fullmessage.contents.body.contents.unshift(...header);
-    if (index === checkData.length - 1) {
+    if (index === splitData.length - 1) {
       fullmessage.contents.footer.contents.unshift(...footer);
       fullmessage.contents.body.contents.push(...summary);
     }
