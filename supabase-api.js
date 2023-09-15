@@ -198,8 +198,8 @@ export const updateSettingTags = async (userId, tags, type) => {
   //get previous tags
   const { data: allTags, error: getTagError } = await getSettingTags(userId);
 
-  if (error) {
-    console.log(error);
+  if (getTagError) {
+    console.log(getTagError);
   }
 
   console.log(allTags);
