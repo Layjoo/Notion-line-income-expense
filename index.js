@@ -1,5 +1,6 @@
 import * as dotenv from "dotenv";
 dotenv.config();
+import moment from 'moment-timezone';
 
 import {
   createTagBubble,
@@ -10,7 +11,6 @@ import {
 } from "./message-object.js";
 import line from "@line/bot-sdk";
 import express from "express";
-import moment from "moment";
 const port = process.env.PORT || 3000;
 const app = express();
 import {
@@ -236,7 +236,7 @@ const followHandeler = async (event) => {
 
   //send welcome message
   const data = await getAccoutingListByDateAndUserId(
-    moment().format("YYYY-MM-DD"),
+    moment().tz('Asia/Bangkok').format('YYYY-MM-DD'),
     userId
   );
 
@@ -312,7 +312,7 @@ const messageHandeler = async (event) => {
 
   if (message === "รายจ่ายวันนี้") {
     const data = await getAccoutingListByDateAndUserId(
-      moment().format("YYYY-MM-DD"),
+      moment().tz('Asia/Bangkok').format('YYYY-MM-DD'),
       userId
     );
     const messages = [todayAccoutingList(data)];
@@ -334,8 +334,8 @@ const messageHandeler = async (event) => {
                 label: "เลือกวันที่",
                 data: `{"postback_type": "history_account"}`,
                 mode: "date",
-                initial: moment().format("YYYY-MM-DD"),
-                max: moment().format("YYYY-MM-DD"),
+                initial: moment().tz('Asia/Bangkok').format('YYYY-MM-DD'),
+                max: moment().tz('Asia/Bangkok').format('YYYY-MM-DD'),
                 min: "2023-01-01",
               },
             },
@@ -407,7 +407,7 @@ const parseAccoutingMessage = (message) => {
       const detail = detailRegex.exec(message)[0] || "";
       const price = parseInt(message.match(priceRegex)[0] || 0);
       const tag = "อื่นๆ";
-      const date = moment().format("YYYY-MM-DD");
+      const date = moment().tz('Asia/Bangkok').format('YYYY-MM-DD');
 
       accountingData = { date, detail, tag, price, type };
     }
