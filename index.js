@@ -217,7 +217,7 @@ const followHandeler = async (event) => {
     return await sendMessages(event.replyToken, messages);
   }
 
-  if (!(user || user?.length === 0)) {
+  if (!user || user?.length === 0) {
     //add new user to database if not exist
     const { error } = await addUserToDB(userId);
     if (error) {
