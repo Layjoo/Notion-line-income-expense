@@ -313,9 +313,7 @@ export const addListToDB = async (accountingData) => {
 };
 
 export const deleteItemById = async (id) => {
-
   try {
-
     // Delete the page in the Notion database based on its ID
     const response = await notion.pages.update({
       page_id: id,
@@ -329,13 +327,14 @@ export const deleteItemById = async (id) => {
   }
 };
 
-export const updateItemById = async (pageId, newTag) => {
+export const updateItemById = async (pageId, dataToUpDate) => {
+  const tag = dataToUpDate.tag;
   try {
     // Define the properties to update, including the "tag" property
     const propertiesToUpdate = {
       tag: {
         select: {
-          name: newTag,
+          name: tag,
         },
       },
     };
@@ -488,6 +487,7 @@ export const updateSettingTags = async (userId, tags, type) => {
       },
     });
 
+
     // Check if any user data was found
     if (response.results.length > 0) {
       // Extract the current setting_tags as an array
@@ -495,7 +495,7 @@ export const updateSettingTags = async (userId, tags, type) => {
         response.results[0].properties["setting_tags"].rich_text[0].plain_text;
 
       // Update tags based on the type (add or delete)
-      let updatedSettingTags = JSON.parse(currentSettingTags).tags;
+      let updatedSettingTags = JSON.parse(currentSettingTags);
       if (type === "add") {
         updatedSettingTags.push(tags);
       } else if (type === "delete") {

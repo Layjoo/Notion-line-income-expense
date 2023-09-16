@@ -80,7 +80,6 @@ const postbackHandeler = async (event) => {
   //this will catch the data from datepicker when user type "ดูประวัติรายจ่าย"
   if (postbackData.postback_type === "history_account") {
     const date = event.postback.params?.date || postbackData.date;
-    console.log(date);
     const data = await getAccoutingListByDateAndUserId(
       moment(date).format("YYYY-MM-DD"),
       userId
@@ -383,7 +382,6 @@ const messageHandeler = async (event) => {
 
   if (message === "สรุปหมวดหมู่เดือนนี้") {
     const data = await getCurrentMonthTagsSummary(userId);
-    console.log(data);
 
     const messages = [currentMonthTag(data)];
 
@@ -397,7 +395,6 @@ const sendMessages = async (replyToken, messages) => {
 };
 
 const parseAccoutingMessage = (message) => {
-  console.log(message);
   // Split message text into lines
   const keywords = ["จ่ายเงินค่า", "ได้เงินค่า"];
   const detailRegex = /(?<=จ่ายเงินค่า|ได้เงินค่า).*?(?=\s)/;
