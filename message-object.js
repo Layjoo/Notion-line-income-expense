@@ -1,6 +1,7 @@
 import moment from "moment";
 moment.locale("th");
 
+//รายจ่ายวันนี้
 export const todayAccoutingList = (data) => {
   function calculateTotalPrice(data) {
     let totalPrice = 0;
@@ -345,6 +346,7 @@ export const todayAccoutingList = (data) => {
   };
 };
 
+//สรุปรายจ่ายรายเดือน
 export const currentMonthAccoutingList = (data) => {
   function calculateTotalPrice(data) {
     let totalPrice = 0;
@@ -650,6 +652,7 @@ export const currentMonthAccoutingList = (data) => {
   };
 };
 
+//แก้ไขหมวดหมู่ (หมวดหมู่) -> postback
 export const createTagBubble = (item, tags) => {
   function createEmptyHorizontalBox() {
     return {
@@ -792,6 +795,7 @@ export const createTagBubble = (item, tags) => {
   };
 };
 
+//สรุปหมวดหมู่เดือนนี้
 export const currentMonthTag = (data) => {
   function calculateTotalPrice(data) {
     let totalPrice = 0;
@@ -818,13 +822,19 @@ export const currentMonthTag = (data) => {
     return max;
   }
 
-  function calculateWidth(data, summary) {
+  function calculateWidth(data, income, expense) {
     const max = findMaxSumaryPrice(data);
-    const absoluteSummary = summary > 0 ? summary : summary * -1;
-    return Math.floor((absoluteSummary / max) * 150);
+    return Math.floor(((income + expense) / max) * 150);
   }
 
   const totalPrice = calculateTotalPrice(data.list);
+  const totalIncome = data.list.reduce((acc, item) => {
+    return acc + item.income;
+  }, 0);
+
+  const totalExpense = data.list.reduce((acc, item) => {
+    return acc + item.expense;
+  }, 0);
 
   return {
     type: "flex",
@@ -930,12 +940,15 @@ export const currentMonthTag = (data) => {
                   contents: [],
                 },
 
-                //summary bar
+                //expense bar
                 {
                   type: "box",
                   layout: "horizontal",
-                  //calculate width
-                  width: `${calculateWidth(data.list, item.summary)}px`,
+                  //calculate width of expense bar
+                  width: `${
+                    (item.expense / (item.expense + item.income)) *
+                    calculateWidth(data.list, item.income, item.expense)
+                  }px`,
                   backgroundColor: "#F5E8E8FF",
                   contents: [
                     {
@@ -946,13 +959,81 @@ export const currentMonthTag = (data) => {
                     },
                   ],
                 },
+
+                //income bar
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  //calculate width of income bar
+                  width: `${
+                    (item.income / (item.expense + item.income)) *
+                    calculateWidth(data.list, item.income, item.expense)
+                  }px`,
+                  backgroundColor: "#CAF2C9FF",
+                  contents: [
+                    {
+                      type: "text",
+                      text: ".",
+                      size: "xxs",
+                      color: "#CAF2C9FF",
+                      contents: [],
+                    },
+                  ],
+                },
               ],
             };
           }),
 
+          //summary section
           {
             type: "separator",
             margin: "md",
+          },
+          {
+            type: "box",
+            layout: "horizontal",
+            margin: "md",
+            contents: [
+              {
+                type: "text",
+                text: "รายรับทั้งหมด",
+                weight: "bold",
+                size: "sm",
+                contents: [],
+              },
+              {
+                type: "text",
+                text: `+${totalIncome} บาท`,
+                color: "#29BA24FF",
+                weight: "bold",
+                size: "sm",
+                align: "end",
+                contents: [],
+              },
+            ],
+          },
+          {
+            type: "box",
+            layout: "horizontal",
+            margin: "xs",
+            contents: [
+              {
+                type: "text",
+                text: "รายจ่ายทั้งหมด",
+                weight: "bold",
+                size: "sm",
+                contents: [],
+              },
+              {
+                type: "text",
+                text: `-${totalExpense} บาท`,
+                color: "#EA4444FF",
+                weight: "bold",
+                size: "sm",
+                align: "end",
+                contents: [],
+              },
+            ],
           },
           {
             type: "box",
@@ -1002,8 +1083,8 @@ export const currentMonthTag = (data) => {
   };
 };
 
+//ดูรายการในหมวดหมู่ (หมวดหมู่) -> postback
 export const tagAccountingList = (data, tag, month) => {
-
   // split array into multiple arrays (add new array every 15 items)
   const messages = [];
   const splitData = splitArray(data);

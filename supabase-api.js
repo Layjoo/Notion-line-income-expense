@@ -98,6 +98,18 @@ export const getCurrentMonthTagsSummary = async (userId) => {
   const summaryList = [];
   tagList.forEach((tag) => {
     const list = moneyList.filter((item) => item.tag === tag);
+    const income = list.reduce((acc, item) => {
+      if (item.type === "income") {
+        return acc + item.price;
+      }
+      return acc;
+    }, 0);
+    const expense = list.reduce((acc, item) => {
+      if (item.type === "expense") {
+        return acc + item.price;
+      }
+      return acc;
+    }, 0);
     const summary = list.reduce((acc, item) => {
       const type = item.type === "expense" ? -1 : 1;
       return acc + item.price * type;
@@ -106,6 +118,8 @@ export const getCurrentMonthTagsSummary = async (userId) => {
     summaryList.push({
       summary: summary,
       tag: tag,
+      income: income || 0,
+      expense: expense || 0,
     });
   });
 
