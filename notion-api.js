@@ -8,6 +8,7 @@ const notionApiKey = process.env.NOTION_API_KEY;
 const notionDatabaseId = process.env.NOTION_DATABASE_ID;
 
 import { Client } from "@notionhq/client";
+import { fetchSupabaseData } from "./supabase-api.js";
 
 const notion = new Client({
   auth: notionApiKey,
@@ -61,31 +62,43 @@ export const getAccoutingListByDateAndUserId = async (date, userId) => {
 
 export const getAccoutingListCurrentMonth = async (userId) => {
   try {
-    const currentMonthStart = moment().startOf("month").format("YYYY-MM-DD");
-    const currentMonthEnd = moment().endOf("month").format("YYYY-MM-DD");
+    const lastDayOfPreviousMonth = moment()
+      .startOf("month")
+      .subtract(1, "day")
+      .format("YYYY-MM-DD");
+    const fistDayOfNextMonth = moment()
+      .endOf("month")
+      .add(1, "day")
+      .format("YYYY-MM-DD");
     const currentMonth = moment().format("YYYY-MM");
 
     // Initialize variables for pagination
     let moneyList = [];
     let nextCursor = null;
+    let has_more = false;
 
     // Assuming 'Notion Database ID' is the ID of your Notion database
-    const notionDatabaseId = process.env.NOTION_DATABASE_ID; // Replace with your database ID
+    let notionDatabaseId = process.env.NOTION_DATABASE_ID; // Replace with your database ID
+
+    // Define the query options for the Notion API
+    const queryOptions = {
+      database_id: notionDatabaseId,
+      filter: {
+        and: [
+          { property: "date", date: { before: fistDayOfNextMonth } },
+          { property: "date", date: { after: lastDayOfPreviousMonth } },
+          { property: "user_id", rich_text: { contains: userId } },
+        ],
+      },
+      sorts: [
+        {
+          property: "date",
+          direction: "ascending",
+        },
+      ],
+    };
 
     do {
-      // Define the query options for the Notion API
-      const queryOptions = {
-        database_id: notionDatabaseId,
-        filter: {
-          and: [
-            { property: "date", date: { before: currentMonthEnd } },
-            { property: "date", date: { after: currentMonthStart } },
-            { property: "user_id", rich_text: { contains: userId } },
-          ],
-        },
-        cursor: nextCursor,
-      };
-
       // Query the Notion database
       const response = await notion.databases.query(queryOptions);
 
@@ -102,7 +115,11 @@ export const getAccoutingListCurrentMonth = async (userId) => {
 
       // Update the nextCursor for the next page (if available)
       nextCursor = response.next_cursor;
-    } while (nextCursor);
+      has_more = response.has_more;
+      if (has_more) {
+        queryOptions.start_cursor = nextCursor;
+      }
+    } while (has_more);
 
     // Summary section
     const dateList = [];
@@ -149,30 +166,35 @@ export const getAccoutingListCurrentMonth = async (userId) => {
 
 export const getCurrentMonthTagsSummary = async (userId) => {
   try {
-    const currentMonthStart = moment().startOf("month").format("YYYY-MM-DD");
-    const currentMonthEnd = moment().endOf("month").format("YYYY-MM-DD");
+    const lastDayOfPreviousMonth = moment()
+      .startOf("month")
+      .subtract(1, "day")
+      .format("YYYY-MM-DD");
+    const fistDayOfNextMonth = moment()
+      .endOf("month")
+      .add(1, "day")
+      .format("YYYY-MM-DD");
+    const currentMonth = moment().format("YYYY-MM");
 
     // Initialize variables for pagination
     let moneyList = [];
     let nextCursor = null;
+    let has_more = false;
 
     // Assuming 'Notion Database ID' is the ID of your Notion database
     const notionDatabaseId = process.env.NOTION_DATABASE_ID; // Replace with your database ID
+    const queryOptions = {
+      database_id: notionDatabaseId,
+      filter: {
+        and: [
+          { property: "date", date: { before: fistDayOfNextMonth } },
+          { property: "date", date: { after: lastDayOfPreviousMonth } },
+          { property: "user_id", rich_text: { contains: userId } },
+        ],
+      },
+    };
 
     do {
-      // Define the query options for the Notion API with 'before' and 'after' filters
-      const queryOptions = {
-        database_id: notionDatabaseId,
-        filter: {
-          and: [
-            { property: "date", date: { before: currentMonthEnd } },
-            { property: "date", date: { after: currentMonthStart } },
-            { property: "user_id", rich_text: { contains: userId } },
-          ],
-        },
-        cursor: nextCursor,
-      };
-
       // Query the Notion database
       const response = await notion.databases.query(queryOptions);
 
@@ -190,7 +212,11 @@ export const getCurrentMonthTagsSummary = async (userId) => {
 
       // Update the nextCursor for the next page (if available)
       nextCursor = response.next_cursor;
-    } while (nextCursor);
+      has_more = response.has_more;
+      if (has_more) {
+        queryOptions.start_cursor = nextCursor;
+      }
+    } while (has_more);
 
     // Get unique tags from the retrieved data
     const tagList = Array.from(new Set(moneyList.map((item) => item.tag)));
@@ -224,7 +250,7 @@ export const getCurrentMonthTagsSummary = async (userId) => {
       });
     });
 
-    return { month: currentMonthStart, list: summaryList };
+    return { month: currentMonth, list: summaryList };
   } catch (error) {
     console.error("Error fetching data from Notion:", error.message);
     return;
@@ -487,7 +513,6 @@ export const updateSettingTags = async (userId, tags, type) => {
       },
     });
 
-
     // Check if any user data was found
     if (response.results.length > 0) {
       // Extract the current setting_tags as an array
@@ -531,3 +556,32 @@ export const updateSettingTags = async (userId, tags, type) => {
     return { error: error.message };
   }
 };
+
+// Function to migrate data from Supabase to Notion
+async function migrateData() {
+  try {
+    // Fetch data from Supabase
+    const supabaseData = await fetchSupabaseData();
+
+    // Iterate through the Supabase data and add each item to Notion
+    for (const item of supabaseData) {
+      const accountingData = {
+        detail: item.detail, // Map Supabase columns to your Notion properties
+        date: item.date,
+        user_id: item.user_id,
+        type: item.type,
+        price: item.price,
+        tag: item.tag,
+        // Add more mappings as needed
+      };
+
+      // Add the data to Notion using your existing function
+      const response = await addListToDB(accountingData);
+      console.log("Added entry to Notion:", response);
+    }
+
+    console.log("Migration completed.");
+  } catch (error) {
+    console.error("Error during migration:", error.message);
+  }
+}

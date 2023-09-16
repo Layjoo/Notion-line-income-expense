@@ -243,3 +243,13 @@ export const updateSettingTags = async (userId, tags, type) => {
     return { error };
   }
 };
+
+//migrate data
+export async function fetchSupabaseData() {
+  const { data, error } = await supabase.from("Money list").select("*"); // Adjust query as needed
+  if (error) {
+    console.error("Error fetching data from Supabase:", error.message);
+    return [];
+  }
+  return data;
+}
