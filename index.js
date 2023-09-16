@@ -25,7 +25,7 @@ import {
   serchUserById,
   updateItemById,
   updateSettingTags,
-} from "./supabase-api.js";
+} from "./notion-api.js";
 
 //setting config for line client
 const config = {
@@ -92,7 +92,7 @@ const postbackHandeler = async (event) => {
 
   //delete item
   if (postbackData.postback_type === "delete_item") {
-    const idToDelete = parseInt(postbackData.delete_item_id);
+    const idToDelete = postbackData.delete_item_id;
     const dateOfItem = postbackData.date;
     const redirect = postbackData.redirect;
 
@@ -218,7 +218,7 @@ const followHandeler = async (event) => {
     return await sendMessages(event.replyToken, messages);
   }
 
-  if (user.length === 0) {
+  if (!(user || user?.length === 0)) {
     //add new user to database if not exist
     const { error } = await addUserToDB(userId);
     if (error) {
@@ -261,7 +261,6 @@ const messageHandeler = async (event) => {
       userId
     );
 
-    console.log(data);
 
     const messages = [todayAccoutingList(data)];
 
