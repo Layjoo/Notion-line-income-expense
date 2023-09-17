@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 dotenv.config();
-import moment from 'moment-timezone';
+import moment from "moment-timezone";
 
 import {
   createTagBubble,
@@ -73,6 +73,7 @@ async function handleEvent(event) {
   }
 }
 
+//event type handelers
 const postbackHandeler = async (event) => {
   const userId = event.source.userId;
   const postbackData = JSON.parse(event.postback.data);
@@ -236,7 +237,7 @@ const followHandeler = async (event) => {
 
   //send welcome message
   const data = await getAccoutingListByDateAndUserId(
-    getDateFromMessage(event.timestamp),
+    getDatefromTimestamp(event.timestamp),
     userId
   );
 
@@ -252,7 +253,11 @@ const messageHandeler = async (event) => {
 
   //check if message is accounting message ex. จ่ายเงินค่าอาหาร 100 บาท
   const isAccountingObject = parseAccoutingMessage(message);
-  const countingMessage = { ...isAccountingObject, user_id: userId , date: getDateFromMessage(event.timestamp),}
+  const countingMessage = {
+    ...isAccountingObject,
+    user_id: userId,
+    date: getDatefromTimestamp(event.timestamp),
+  };
   if (isAccountingObject) {
     await addListToDB(countingMessage);
 
@@ -260,7 +265,6 @@ const messageHandeler = async (event) => {
       countingMessage.date,
       userId
     );
-
 
     const messages = [todayAccoutingList(data)];
 
@@ -313,7 +317,7 @@ const messageHandeler = async (event) => {
 
   if (message === "รายจ่ายวันนี้") {
     const data = await getAccoutingListByDateAndUserId(
-      getDateFromMessage(event.timestamp),
+      getDatefromTimestamp(event.timestamp),
       userId
     );
     const messages = [todayAccoutingList(data)];
@@ -335,8 +339,8 @@ const messageHandeler = async (event) => {
                 label: "เลือกวันที่",
                 data: `{"postback_type": "history_account"}`,
                 mode: "date",
-                initial: getDateFromMessage(event.timestamp),
-                max: getDateFromMessage(event.timestamp),
+                initial: getDatefromTimestamp(event.timestamp),
+                max: getDatefromTimestamp(event.timestamp),
                 min: "2023-01-01",
               },
             },
@@ -409,7 +413,7 @@ const parseAccoutingMessage = (message) => {
       const price = parseInt(message.match(priceRegex)[0] || 0);
       const tag = "อื่นๆ";
 
-      accountingData = {detail, tag, price, type };
+      accountingData = { detail, tag, price, type };
     }
   });
 
@@ -439,19 +443,15 @@ const parseAddNewTagMessage = (message) => {
   return tagData;
 };
 
-const getDateFromMessage = (timestamp) => {
-  console.log(timestamp);
+const getDatefromTimestamp = (timestamp) => {
   const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const formattedDate = `${year}-${month}-${day}`;
 
-const year = date.getFullYear();
-const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
-const day = String(date.getDate()).padStart(2, '0');
-
-const formattedDate = `${year}-${month}-${day}`;
-console.log(formattedDate);
-
-return formattedDate;
-}
+  return formattedDate;
+};
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);

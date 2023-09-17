@@ -1,9 +1,7 @@
 import { config } from "dotenv";
 import moment from "moment";
-
 config();
 
-// Retrieve environment variables
 const notionApiKey = process.env.NOTION_API_KEY;
 const notionDatabaseId = process.env.NOTION_DATABASE_ID;
 
@@ -12,17 +10,15 @@ import { fetchSupabaseData } from "./supabase-api.js";
 
 const notion = new Client({
   auth: notionApiKey,
-}); // Replace with your Notion API key
+});
 
 export const getAccoutingListByDateAndUserId = async (date, userId) => {
   try {
-    // Assuming 'Notion Database ID' is the ID of your Notion database
-
     let moneyList = [];
     let nextCursor = null;
 
     do {
-      // Initialize the query with the filter and cursor (if available)
+      // initialize the query with the filter
       const queryOptions = {
         database_id: notionDatabaseId,
         filter: {
@@ -34,10 +30,10 @@ export const getAccoutingListByDateAndUserId = async (date, userId) => {
         cursor: nextCursor,
       };
 
-      // Query the Notion database
+      // query the Notion database
       const response = await notion.databases.query(queryOptions);
 
-      // Extract data from the current page and append it to moneyList
+      // extract data from the current page and append it to moneyList
       const currentPageMoneyList = response.results.map((entry) => ({
         date: entry.properties["date"].date.start,
         user_id: entry.properties["user_id"].rich_text[0].plain_text,
@@ -49,7 +45,7 @@ export const getAccoutingListByDateAndUserId = async (date, userId) => {
       }));
       moneyList = moneyList.concat(currentPageMoneyList);
 
-      // Update the nextCursor for the next page (if available)
+      // update the nextCursor for the next page (if available)
       nextCursor = response.next_cursor;
     } while (nextCursor);
 
@@ -61,28 +57,25 @@ export const getAccoutingListByDateAndUserId = async (date, userId) => {
 };
 
 export const getAccoutingListCurrentMonth = async (userId) => {
-  try {
-    const lastDayOfPreviousMonth = moment()
-      .startOf("month")
-      .subtract(1, "day")
-      .format("YYYY-MM-DD");
-    const fistDayOfNextMonth = moment()
-      .endOf("month")
-      .add(1, "day")
-      .format("YYYY-MM-DD");
-    const currentMonth = moment().format("YYYY-MM");
+  const lastDayOfPreviousMonth = moment()
+    .startOf("month")
+    .subtract(1, "day")
+    .format("YYYY-MM-DD");
+  const fistDayOfNextMonth = moment()
+    .endOf("month")
+    .add(1, "day")
+    .format("YYYY-MM-DD");
+  const currentMonth = moment().format("YYYY-MM");
 
-    // Initialize variables for pagination
+  try {
+    // initialize variables for pagination
     let moneyList = [];
     let nextCursor = null;
     let has_more = false;
 
-    // Assuming 'Notion Database ID' is the ID of your Notion database
-    let notionDatabaseId = process.env.NOTION_DATABASE_ID; // Replace with your database ID
-
-    // Define the query options for the Notion API
+    // define the query options for the Notion API
     const queryOptions = {
-      database_id: notionDatabaseId,
+      database_id: process.env.NOTION_DATABASE_ID,
       filter: {
         and: [
           { property: "date", date: { before: fistDayOfNextMonth } },
@@ -99,10 +92,10 @@ export const getAccoutingListCurrentMonth = async (userId) => {
     };
 
     do {
-      // Query the Notion database
+      // query the Notion database
       const response = await notion.databases.query(queryOptions);
 
-      // Extract data from the current page and append it to moneyList
+      // extract data from the current page and append it to moneyList
       const currentPageMoneyList = response.results.map((entry) => ({
         date: entry.properties["date"].date.start,
         user_id: entry.properties["user_id"].rich_text[0].plain_text,
@@ -113,7 +106,7 @@ export const getAccoutingListCurrentMonth = async (userId) => {
       }));
       moneyList = moneyList.concat(currentPageMoneyList);
 
-      // Update the nextCursor for the next page (if available)
+      // update the nextCursor for the next page (if available)
       nextCursor = response.next_cursor;
       has_more = response.has_more;
       if (has_more) {
@@ -121,7 +114,7 @@ export const getAccoutingListCurrentMonth = async (userId) => {
       }
     } while (has_more);
 
-    // Summary section
+    // get date list from the retrieved data
     const dateList = [];
     moneyList.forEach((item) => {
       if (!dateList.includes(item.date)) {
@@ -129,6 +122,7 @@ export const getAccoutingListCurrentMonth = async (userId) => {
       }
     });
 
+    // get list of date summary
     const summaryList = [];
     dateList.forEach((date) => {
       const list = moneyList.filter((item) => item.date === date);
@@ -165,26 +159,23 @@ export const getAccoutingListCurrentMonth = async (userId) => {
 };
 
 export const getCurrentMonthTagsSummary = async (userId) => {
-  try {
-    const lastDayOfPreviousMonth = moment()
-      .startOf("month")
-      .subtract(1, "day")
-      .format("YYYY-MM-DD");
-    const fistDayOfNextMonth = moment()
-      .endOf("month")
-      .add(1, "day")
-      .format("YYYY-MM-DD");
-    const currentMonth = moment().format("YYYY-MM");
+  const lastDayOfPreviousMonth = moment()
+    .startOf("month")
+    .subtract(1, "day")
+    .format("YYYY-MM-DD");
+  const fistDayOfNextMonth = moment()
+    .endOf("month")
+    .add(1, "day")
+    .format("YYYY-MM-DD");
+  const currentMonth = moment().format("YYYY-MM");
 
-    // Initialize variables for pagination
+  try {
     let moneyList = [];
     let nextCursor = null;
     let has_more = false;
 
-    // Assuming 'Notion Database ID' is the ID of your Notion database
-    const notionDatabaseId = process.env.NOTION_DATABASE_ID; // Replace with your database ID
     const queryOptions = {
-      database_id: notionDatabaseId,
+      database_id: process.env.NOTION_DATABASE_ID,
       filter: {
         and: [
           { property: "date", date: { before: fistDayOfNextMonth } },
@@ -195,10 +186,10 @@ export const getCurrentMonthTagsSummary = async (userId) => {
     };
 
     do {
-      // Query the Notion database
+      // query the Notion database
       const response = await notion.databases.query(queryOptions);
 
-      // Extract data from the current page and append it to moneyList
+      // extract data from the current page and append it to moneyList
       const currentPageMoneyList = response.results.map((entry) => ({
         date: entry.properties["date"].date.start,
         user_id: entry.properties["user_id"].rich_text[0].plain_text,
@@ -210,7 +201,7 @@ export const getCurrentMonthTagsSummary = async (userId) => {
       }));
       moneyList = moneyList.concat(currentPageMoneyList);
 
-      // Update the nextCursor for the next page (if available)
+      // update the nextCursor for the next page (if available)
       nextCursor = response.next_cursor;
       has_more = response.has_more;
       if (has_more) {
@@ -218,10 +209,10 @@ export const getCurrentMonthTagsSummary = async (userId) => {
       }
     } while (has_more);
 
-    // Get unique tags from the retrieved data
+    // get tags from the retrieved data
     const tagList = Array.from(new Set(moneyList.map((item) => item.tag)));
 
-    // Summary section
+    // get data from each lists
     const summaryList = [];
     tagList.forEach((tag) => {
       const list = moneyList.filter((item) => item.tag === tag);
@@ -380,31 +371,26 @@ export const updateItemById = async (pageId, dataToUpDate) => {
 
 export const addUserToDB = async (userId) => {
   try {
-    // Assuming 'Notion Database ID' is the ID of your Notion database
-    const notionDatabaseId = process.env.NOTION_USER_DATABASE_ID; // Replace with your database ID
+    const settingTagsValue = [
+      "เครื่องดื่ม",
+      "อาหาร",
+      "เดินทาง",
+      "ขนม",
+      "ของใช้",
+      "ค่าห้อง",
+      "น้ำ-ไฟ",
+      "ซักผ้า",
+      "เสื้อผ้า",
+      "หนังสือ",
+      "เคสโฮม",
+      "เงินเดือน",
+      "โอที",
+      "อื่นๆ",
+    ];
 
-    // Create a rich text property with the value ["น้ำมัน"] as a string
-    const settingTagsValue = 
-      [
-        "เครื่องดื่ม",
-        "อาหาร",
-        "เดินทาง",
-        "ขนม",
-        "ของใช้",
-        "ค่าห้อง",
-        "น้ำ-ไฟ",
-        "ซักผ้า",
-        "เสื้อผ้า",
-        "หนังสือ",
-        "เคสโฮม",
-        "เงินเดือน",
-        "โอที",
-        "อื่นๆ",
-      ];
-
-    // Create a new page object to represent the user in the Notion database
+    // create a new page object to represent the user in the Notion database
     const newUserPage = {
-      parent: { database_id: notionDatabaseId },
+      parent: { database_id: process.env.NOTION_USER_DATABASE_ID },
       properties: {
         user_id: { title: [{ text: { content: userId } }] },
         setting_tags: {
@@ -420,7 +406,7 @@ export const addUserToDB = async (userId) => {
       },
     };
 
-    // Create the new user page in the Notion database
+    // add new user in the Notion database
     const response = await notion.pages.create(newUserPage);
 
     return { data: response, error: null };
@@ -432,12 +418,9 @@ export const addUserToDB = async (userId) => {
 
 export const serchUserById = async (userId) => {
   try {
-    // Assuming 'Notion Database ID' is the ID of your Notion database
-    const notionDatabaseId = process.env.NOTION_USER_DATABASE_ID; // Replace with your database ID
-
-    // Query the Notion database to retrieve data for the specified user ID
+    // query the Notion database to retrieve data for the specified user ID
     const response = await notion.databases.query({
-      database_id: notionDatabaseId,
+      database_id: process.env.NOTION_USER_DATABASE_ID,
       filter: {
         property: "user_id",
         title: {
@@ -446,64 +429,54 @@ export const serchUserById = async (userId) => {
       },
     });
 
-    // Check if any user data was found (user exists)
+    // check if any user data was found (user exists)
     const userExists = response.results.length > 0;
 
-    return {data: userExists, error: null}
+    return { data: userExists, error: null };
   } catch (error) {
     console.error("Error checking if user exists in Notion:", error.message);
-    return {data: null, error: error}; // Return false if an error occurs
+    return { data: null, error: error };
   }
 };
 
 export const getSettingTags = async (userId) => {
   try {
-    // Assuming 'Notion Database ID' is the ID of your Notion database
-    const notionDatabaseId = process.env.NOTION_USER_DATABASE_ID; // Replace with your database ID
-
-    // Query the Notion database to retrieve data for the specified user ID
+    // query the Notion database to retrieve data for the specified user ID
     const response = await notion.databases.query({
-      database_id: notionDatabaseId,
+      database_id: process.env.NOTION_USER_DATABASE_ID,
       filter: {
         property: "user_id",
         title: {
           equals: userId,
         },
       },
-      // Include the property containing the JSON string in the response
-      // Replace "property_name" with the actual property name that contains the JSON string
-      // For example, if it's named "user_data", use "user_data" instead of "property_name"
-      // properties: ["property_name"],
     });
 
-    // Check if any user data was found
+    // check if any user data was found
     if (response.results.length > 0) {
-      // Extract the JSON string from the rich text property
+      // extract the JSON string from the rich text property
       const jsonData =
         response.results[0].properties["setting_tags"].rich_text[0].plain_text;
 
-      // Parse the JSON string into an object
+      // parse the JSON string into an object
       const allTags = JSON.parse(jsonData);
 
       return { data: allTags, error: null };
     } else {
-      // User not found
+      // user not found
       return { data: null, error: "User not found" };
     }
   } catch (error) {
     console.error("Error fetching user data from Notion:", error.message);
-    throw error; // Propagate the error
+    throw error;
   }
 };
 
 export const updateSettingTags = async (userId, tags, type) => {
   try {
-    // Assuming 'Notion Database ID' is the ID of your Notion database
-    const notionDatabaseId = process.env.NOTION_USER_DATABASE_ID; // Replace with your database ID
-
-    // Query the Notion database to retrieve the current setting_tags for the user
+    // query the Notion database to retrieve the current setting_tags for the user
     const response = await notion.databases.query({
-      database_id: notionDatabaseId,
+      database_id: process.env.NOTION_USER_DATABASE_ID,
       filter: {
         property: "user_id",
         title: {
@@ -512,13 +485,13 @@ export const updateSettingTags = async (userId, tags, type) => {
       },
     });
 
-    // Check if any user data was found
+    // check if any user data was found
     if (response.results.length > 0) {
-      // Extract the current setting_tags as an array
+      // extract the current setting_tags as an array
       const currentSettingTags =
         response.results[0].properties["setting_tags"].rich_text[0].plain_text;
 
-      // Update tags based on the type (add or delete)
+      // update tags based on the type (add or delete)
       let updatedSettingTags = JSON.parse(currentSettingTags);
       if (type === "add") {
         updatedSettingTags.push(tags);
@@ -526,10 +499,10 @@ export const updateSettingTags = async (userId, tags, type) => {
         updatedSettingTags = updatedSettingTags.filter((tag) => tag !== tags);
       }
 
-      // Stringify the updated setting tags
+      // stringify the updated setting tags
       const updatedSettingTagsString = JSON.stringify(updatedSettingTags);
 
-      // Update the user's setting_tags in the Notion database
+      // update the user's setting_tags in the Notion database
       const updateResponse = await notion.pages.update({
         page_id: response.results[0].id,
         properties: {
@@ -547,7 +520,7 @@ export const updateSettingTags = async (userId, tags, type) => {
 
       return { error: null };
     } else {
-      // User not found
+      // user not found
       return { error: "User not found" };
     }
   } catch (error) {
@@ -556,25 +529,23 @@ export const updateSettingTags = async (userId, tags, type) => {
   }
 };
 
-// Function to migrate data from Supabase to Notion
+// function to migrate data from Supabase to Notion
 async function migrateData() {
   try {
-    // Fetch data from Supabase
+    // fetch data from Supabase
     const supabaseData = await fetchSupabaseData();
 
-    // Iterate through the Supabase data and add each item to Notion
+    // iterate through the Supabase data and add each item to Notion
     for (const item of supabaseData) {
       const accountingData = {
-        detail: item.detail, // Map Supabase columns to your Notion properties
+        detail: item.detail,
         date: item.date,
         user_id: item.user_id,
         type: item.type,
         price: item.price,
         tag: item.tag,
-        // Add more mappings as needed
       };
 
-      // Add the data to Notion using your existing function
       const response = await addListToDB(accountingData);
       console.log("Added entry to Notion:", response);
     }
