@@ -385,7 +385,7 @@ export const addUserToDB = async (userId) => {
 
     // Create a rich text property with the value ["น้ำมัน"] as a string
     const settingTagsValue = 
-      tags: [
+      [
         "เครื่องดื่ม",
         "อาหาร",
         "เดินทาง",
