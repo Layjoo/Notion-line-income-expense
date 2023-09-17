@@ -384,7 +384,7 @@ export const addUserToDB = async (userId) => {
     const notionDatabaseId = process.env.NOTION_USER_DATABASE_ID; // Replace with your database ID
 
     // Create a rich text property with the value ["น้ำมัน"] as a string
-    const settingTagsValue = {
+    const settingTagsValue = 
       tags: [
         "เครื่องดื่ม",
         "อาหาร",
@@ -400,8 +400,7 @@ export const addUserToDB = async (userId) => {
         "เงินเดือน",
         "โอที",
         "อื่นๆ",
-      ],
-    };
+      ];
 
     // Create a new page object to represent the user in the Notion database
     const newUserPage = {
@@ -450,10 +449,10 @@ export const serchUserById = async (userId) => {
     // Check if any user data was found (user exists)
     const userExists = response.results.length > 0;
 
-    return userExists;
+    return {data: userExists, error: null}
   } catch (error) {
     console.error("Error checking if user exists in Notion:", error.message);
-    return false; // Return false if an error occurs
+    return {data: null, error: error}; // Return false if an error occurs
   }
 };
 
