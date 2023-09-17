@@ -236,7 +236,7 @@ const followHandeler = async (event) => {
 
   //send welcome message
   const data = await getAccoutingListByDateAndUserId(
-    moment().tz('Asia/Bangkok').format('YYYY-MM-DD'),
+    getDateFromMessage(event.timestamp),
     userId
   );
 
@@ -252,11 +252,12 @@ const messageHandeler = async (event) => {
 
   //check if message is accounting message ex. จ่ายเงินค่าอาหาร 100 บาท
   const isAccountingObject = parseAccoutingMessage(message);
+  const countingMessage = { ...isAccountingObject, user_id: userId , date: getDateFromMessage(event.timestamp),}
   if (isAccountingObject) {
-    await addListToDB({ ...isAccountingObject, user_id: userId });
+    await addListToDB(countingMessage);
 
     const data = await getAccoutingListByDateAndUserId(
-      isAccountingObject.date,
+      countingMessage.date,
       userId
     );
 
@@ -312,7 +313,7 @@ const messageHandeler = async (event) => {
 
   if (message === "รายจ่ายวันนี้") {
     const data = await getAccoutingListByDateAndUserId(
-      moment().tz('Asia/Bangkok').format('YYYY-MM-DD'),
+      getDateFromMessage(event.timestamp),
       userId
     );
     const messages = [todayAccoutingList(data)];
@@ -334,8 +335,8 @@ const messageHandeler = async (event) => {
                 label: "เลือกวันที่",
                 data: `{"postback_type": "history_account"}`,
                 mode: "date",
-                initial: moment().tz('Asia/Bangkok').format('YYYY-MM-DD'),
-                max: moment().tz('Asia/Bangkok').format('YYYY-MM-DD'),
+                initial: getDateFromMessage(event.timestamp),
+                max: getDateFromMessage(event.timestamp),
                 min: "2023-01-01",
               },
             },
@@ -407,9 +408,8 @@ const parseAccoutingMessage = (message) => {
       const detail = detailRegex.exec(message)[0] || "";
       const price = parseInt(message.match(priceRegex)[0] || 0);
       const tag = "อื่นๆ";
-      const date = moment().tz('Asia/Bangkok').format('YYYY-MM-DD');
 
-      accountingData = { date, detail, tag, price, type };
+      accountingData = {detail, tag, price, type };
     }
   });
 
@@ -438,6 +438,20 @@ const parseAddNewTagMessage = (message) => {
 
   return tagData;
 };
+
+const getDateFromMessage = (timestamp) => {
+  console.log(timestamp);
+  const date = new Date(timestamp);
+
+const year = date.getFullYear();
+const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+const day = String(date.getDate()).padStart(2, '0');
+
+const formattedDate = `${year}-${month}-${day}`;
+console.log(formattedDate);
+
+return formattedDate;
+}
 
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
