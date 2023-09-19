@@ -249,6 +249,15 @@ export const getCurrentMonthTagsSummary = async (userId) => {
 };
 
 export const getAccoutingListByTag = async (tag, userId) => {
+  const lastDayOfPreviousMonth = moment()
+    .startOf("month")
+    .subtract(1, "day")
+    .format("YYYY-MM-DD");
+  const fistDayOfNextMonth = moment()
+    .endOf("month")
+    .add(1, "day")
+    .format("YYYY-MM-DD");
+  
   try {
     // Initialize variables for pagination
     let moneyList = [];
@@ -263,11 +272,17 @@ export const getAccoutingListByTag = async (tag, userId) => {
         database_id: notionDatabaseId,
         filter: {
           and: [
-            { property: "tag", select: { equals: tag } }, // Assuming "tag" is a select property
+            { property: "date", date: { before: fistDayOfNextMonth } },
+            { property: "date", date: { after: lastDayOfPreviousMonth } },
+            { property: "tag", select: { equals: tag } },
             { property: "user_id", rich_text: { contains: userId } },
+          ],},
+          sorts: [
+            {
+              property: "price",
+              direction: "descending",
+            },
           ],
-        },
-        cursor: nextCursor,
       };
 
       // Query the Notion database

@@ -362,10 +362,11 @@ export const currentMonthAccoutingList = (data) => {
     let max = 0;
 
     data.forEach((item) => {
-      const summtion = item.income + item.expense;
+      const summation = item.income + (item.expense*-1);
+      const absoluteSummarion = summation > 0 ? summation : summation * -1;
 
-      if (summtion > max) {
-        max = summtion;
+      if (absoluteSummarion > max) {
+        max = absoluteSummarion;
       }
     });
 
@@ -374,7 +375,9 @@ export const currentMonthAccoutingList = (data) => {
 
   function calculateWidth(data, income, expense) {
     const max = findMaxSumaryPrice(data);
-    return Math.floor(((income + expense) / max) * 180);
+    const summation = income + (expense*-1);
+    const absoluteSummarion = summation > 0 ? summation : summation * -1;
+    return Math.floor((absoluteSummarion / max) * 180);
   }
 
   const totalPrice = calculateTotalPrice(data.list);
@@ -1085,7 +1088,7 @@ export const currentMonthTag = (data) => {
 
 //ดูรายการในหมวดหมู่ (หมวดหมู่) -> postback
 export const tagAccountingList = (data, tag, month) => {
-  // split array into multiple arrays (add new array every 15 items)
+  // for large data -> split data into multiple arrays (add new array every 15 items)
   const messages = [];
   const splitData = splitArray(data);
 
@@ -1264,7 +1267,6 @@ export const tagAccountingList = (data, tag, month) => {
                   weight: "bold",
                   size: "sm",
                   align: "end",
-                  offsetEnd: "55px",
                   contents: [],
                 },
               ],
@@ -1311,33 +1313,6 @@ export const tagAccountingList = (data, tag, month) => {
                   align: "end",
                   offsetEnd: "8px",
                   contents: [],
-                },
-                {
-                  type: "box",
-                  layout: "vertical",
-                  action: {
-                    type: "postback",
-                    label: "ลบรายการ",
-                    text: `ลบรายการ ${item.detail}`,
-                    data: `{"postback_type": "delete_item", "delete_item_id": "${item.id}", "date": "${item.date}", "redirect": "history_tag", "tag": "${tag}", "month": "${month}"}`,
-                  },
-                  width: "50px",
-                  backgroundColor: "#F5E8E8FF",
-                  cornerRadius: "10px",
-                  contents: [
-                    {
-                      type: "text",
-                      text: "ลบ",
-                      size: "sm",
-                      color: "#EA4444FF",
-                      align: "center",
-                      gravity: "center",
-                      contents: [],
-                      offsetBottom: "3px",
-                    },
-                  ],
-                  justifyContent: "center",
-                  alignItems: "center",
                 },
               ],
               justifyContent: "center",
