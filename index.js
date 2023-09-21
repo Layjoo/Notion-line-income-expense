@@ -400,22 +400,37 @@ const sendMessages = async (replyToken, messages) => {
 };
 
 const parseAccoutingMessage = (message) => {
-  // Split message text into lines
+  // Regular expression to match the new pattern
+  const newPatternRegex = /^(-?\d+)\s(.*?)(?=\s|$)/;
   const keywords = ["จ่ายเงินค่า", "ได้เงินค่า"];
   const detailRegex = /(?<=จ่ายเงินค่า|ได้เงินค่า).*?(?=\s)/;
-  const priceRegex = /\d+(?=\sบาท)/;
+  const priceRegex = /-?\d+(?=\sบาท)/;
 
   let accountingData;
-  keywords.forEach((keyword) => {
-    if (message.includes(keyword) && message.includes("บาท")) {
-      const type = keyword === "จ่ายเงินค่า" ? "expense" : "income";
-      const detail = detailRegex.exec(message)[0] || "";
-      const price = parseInt(message.match(priceRegex)[0] || 0);
-      const tag = "อื่นๆ";
 
-      accountingData = { detail, tag, price, type };
-    }
-  });
+  // Check for the new pattern
+  const newPatternMatch = message.match(newPatternRegex);
+  if (newPatternMatch) {
+    const actualPrice = parseInt(newPatternMatch[1]);
+    const price = actualPrice > 0 ? actualPrice : actualPrice * -1;
+    const detail = newPatternMatch[2];
+    const tag = "อื่นๆ";
+    const type = actualPrice < 0 ? "expense" : "income";
+
+    accountingData = { detail, tag, price, type };
+  } else {
+    // Check for keywords
+    keywords.forEach((keyword) => {
+      if (message.includes(keyword) && message.includes("บาท")) {
+        const type = keyword === "จ่ายเงินค่า" ? "expense" : "income";
+        const detail = detailRegex.exec(message)[0] || "";
+        const price = parseInt(message.match(priceRegex)[0] || 0);
+        const tag = "อื่นๆ";
+
+        accountingData = { detail, tag, price, type };
+      }
+    });
+  }
 
   return accountingData;
 };
