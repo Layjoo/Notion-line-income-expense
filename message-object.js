@@ -33,7 +33,7 @@ export const todayAccoutingList = (data) => {
   if (data.list.length === 0) {
     return {
       type: "flex",
-      altText: `รายจ่ายวันนี้ ${calculateTotalPrice(data.list).toString()} บาท`,
+      altText: `ยังไม่มีรายการวันนี้`,
       contents: {
         type: "bubble",
         direction: "ltr",
@@ -108,7 +108,7 @@ export const todayAccoutingList = (data) => {
 
   return {
     type: "flex",
-    altText: `รายจ่ายวันนีี้ ${calculateTotalPrice(data.list).toString()} บาท`,
+    altText: `รายจ่ายวันนี้ ${totalExpense.toString()} บาท รายรับวันนี้ ${totalIncome.toString()} บาท`,
     contents: {
       type: "bubble",
       direction: "ltr",
@@ -392,7 +392,7 @@ export const currentMonthAccoutingList = (data) => {
 
   return {
     type: "flex",
-    altText: `รายจ่ายเดือนนี้ ${calculateTotalPrice(data.list).toString()} บาท`,
+    altText: `รายจ่ายเดือนนี้ ${totalExpense.toString()} บาท รายรับเดือนนี้ ${totalIncome.toString()} บาท`,
     contents: {
       type: "bubble",
       direction: "ltr",
@@ -841,7 +841,7 @@ export const currentMonthTag = (data) => {
 
   return {
     type: "flex",
-    altText: `รายจ่ายเดือนนี้ ${calculateTotalPrice(data.list).toString()} บาท`,
+    altText: `รายจ่ายเดือนนี้ ${totalExpense.toString()} บาท รายรับเดือนนี้ ${totalIncome.toString()} บาท`,
     contents: {
       type: "bubble",
       direction: "ltr",
@@ -1239,9 +1239,7 @@ export const tagAccountingList = (data, tag, month) => {
 
     const fullmessage = {
       type: "flex",
-      altText: `รายจ่ายในหมวดหมู่ ${tag} เดือน ${moment(month)
-        .locale("th")
-        .format("MMMM YYYY")}`,
+      altText: `ยอดรวมค่า${tag} ${totalPrice} บาท`,
       contents: {
         type: "bubble",
         direction: "ltr",
