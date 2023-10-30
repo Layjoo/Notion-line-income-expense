@@ -310,7 +310,7 @@ const messageHandeler = async (event) => {
   //other type of message
   if (message === "สรุปรายจ่ายเดือนนี้") {
     const data = await getAccoutingListCurrentMonth(userId);
-    const messages = [currentMonthAccoutingList(data)];
+    const messages = currentMonthAccoutingList(data);
 
     await sendMessages(event.replyToken, messages);
   }

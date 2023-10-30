@@ -347,7 +347,7 @@ export const todayAccoutingList = (data) => {
 };
 
 //สรุปรายจ่ายรายเดือน
-export const currentMonthAccoutingList = (data) => {
+export const oldcurrentMonthAccoutingList = (data) => {
   function calculateTotalPrice(data) {
     let totalPrice = 0;
 
@@ -362,7 +362,7 @@ export const currentMonthAccoutingList = (data) => {
     let max = 0;
 
     data.forEach((item) => {
-      const summation = item.income + (item.expense*-1);
+      const summation = item.income + item.expense * -1;
       const absoluteSummarion = summation > 0 ? summation : summation * -1;
 
       if (absoluteSummarion > max) {
@@ -375,7 +375,7 @@ export const currentMonthAccoutingList = (data) => {
 
   function calculateWidth(data, income, expense) {
     const max = findMaxSumaryPrice(data);
-    const summation = income + (expense*-1);
+    const summation = income + expense * -1;
     const absoluteSummarion = summation > 0 ? summation : summation * -1;
     return Math.floor((absoluteSummarion / max) * 180);
   }
@@ -653,6 +653,353 @@ export const currentMonthAccoutingList = (data) => {
       },
     },
   };
+};
+
+export const currentMonthAccoutingList = (data) => {
+  const totalPrice = calculateTotalPrice(data.list);
+  const totalIncome = data.list.reduce((acc, item) => {
+    return acc + item.income;
+  }, 0);
+  const totalExpense = data.list.reduce((acc, item) => {
+    return acc + item.expense;
+  }, 0);
+
+  // for large data -> split data into multiple arrays (add new array every 15 items)
+  const messages = [];
+  const splitData = splitArray(data);
+
+  // Generate dynamic message
+  splitData.forEach((data, index) => {
+    const header = [
+      {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "text",
+            text: "สรุปรายจ่ายประจำเดือน",
+            weight: "bold",
+            size: "md",
+            color: "#29BA24FF",
+            contents: [],
+          },
+          {
+            type: "text",
+            text: `เดือน ${moment(data.month)
+              .locale("th")
+              .format("MMMM YYYY")}`,
+            size: "md",
+            gravity: "bottom",
+            margin: "md",
+            contents: [],
+          },
+        ],
+      },
+      {
+        type: "separator",
+        margin: "md",
+      },
+    ];
+
+    const footer = [
+      {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "button",
+            action: {
+              type: "message",
+              label: "สรุปหมวดหมู่เดือนนี้",
+              text: "สรุปหมวดหมู่เดือนนี้",
+            },
+            height: "sm",
+            style: "primary",
+          },
+          {
+            type: "text",
+            text: "คำแนะนำ: แตะวันที่เพื่อดูรายละเอียด",
+            size: "xxs",
+            align: "center",
+            margin: "md",
+            contents: [],
+          },
+        ],
+      },
+    ];
+
+    const summary = [
+      {
+        type: "separator",
+        margin: "md",
+      },
+      {
+        type: "box",
+        layout: "horizontal",
+        margin: "md",
+        contents: [
+          {
+            type: "text",
+            text: "รายรับทั้งหมด",
+            weight: "bold",
+            size: "sm",
+            contents: [],
+          },
+          {
+            type: "text",
+            text: `+${totalIncome} บาท`,
+            color: "#29BA24FF",
+            weight: "bold",
+            size: "sm",
+            align: "end",
+            contents: [],
+          },
+        ],
+      },
+      {
+        type: "box",
+        layout: "horizontal",
+        margin: "xs",
+        contents: [
+          {
+            type: "text",
+            text: "รายจ่ายทั้งหมด",
+            weight: "bold",
+            size: "sm",
+            contents: [],
+          },
+          {
+            type: "text",
+            text: `-${totalExpense} บาท`,
+            color: "#EA4444FF",
+            weight: "bold",
+            size: "sm",
+            align: "end",
+            contents: [],
+          },
+        ],
+      },
+      {
+        type: "box",
+        layout: "horizontal",
+        margin: "xs",
+        contents: [
+          {
+            type: "text",
+            text: "รวม",
+            weight: "bold",
+            size: "sm",
+            contents: [],
+          },
+          {
+            type: "text",
+            text: `${totalPrice} บาท`,
+            color: totalPrice > 0 ? "#29BA24FF" : "#EA4444FF",
+            weight: "bold",
+            size: "sm",
+            align: "end",
+            contents: [],
+          },
+        ],
+      },
+    ];
+
+    const fullmessage = {
+      type: "flex",
+      altText: `รายจ่ายเดือนนี้ ${totalExpense.toString()} บาท รายรับเดือนนี้ ${totalIncome.toString()} บาท`,
+      contents: {
+        type: "bubble",
+        direction: "ltr",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "box",
+              layout: "horizontal",
+              margin: "sm",
+              contents: [
+                {
+                  type: "text",
+                  text: "วันที่",
+                  weight: "bold",
+                  size: "sm",
+                  contents: [],
+                },
+                {
+                  type: "text",
+                  text: "ยอดรวม",
+                  weight: "bold",
+                  size: "sm",
+                  align: "end",
+                  contents: [],
+                },
+              ],
+            },
+            {
+              type: "separator",
+              margin: "sm",
+            },
+
+            //dynamic section
+            ...data.map((item) => {
+              return {
+                type: "box",
+                layout: "horizontal",
+                margin: "md",
+                contents: [
+                  {
+                    type: "box",
+                    layout: "vertical",
+                    action: {
+                      type: "postback",
+                      label: `ดูประวัติวันที่ ${moment(item.date).format(
+                        "D MMMM YYYY"
+                      )}`,
+                      text: `ดูประวัติวันที่ ${moment(item.date).format(
+                        "D MMMM YYYY"
+                      )}`,
+                      data: `{"postback_type": "history_account", "date": "${item.date}"}`,
+                    },
+                    width: "20px",
+                    backgroundColor: "#CAF2C9FF",
+                    cornerRadius: "8px",
+                    contents: [
+                      {
+                        type: "text",
+                        text: `${moment(item.date).format("D")}`,
+                        size: "xxs",
+                        color: "#29BA24FF",
+                        align: "center",
+                        contents: [],
+                      },
+                    ],
+                    justifyContent: "center",
+                    alignItems: "center",
+                  },
+                  {
+                    type: "text",
+                    text:
+                      item.summary > 0 ? `+${item.summary}` : `${item.summary}`,
+                    size: "xxs",
+                    color: item.summary > 0 ? "#29BA24FF" : "#EA4444FF",
+                    align: "end",
+                    offsetEnd: "5px",
+                    contents: [],
+                  },
+
+                  //expense bar
+                  {
+                    type: "box",
+                    layout: "horizontal",
+                    //calculate width of expense bar
+                    width: `${
+                      (item.expense / (item.expense + item.income)) *
+                      calculateWidth(data, item.income, item.expense)
+                    }px`,
+                    backgroundColor: "#F5E8E8FF",
+                    contents: [
+                      {
+                        type: "text",
+                        text: ".",
+                        color: "#F5E8E8FF",
+                        contents: [],
+                      },
+                    ],
+                  },
+
+                  //income bar
+                  {
+                    type: "box",
+                    layout: "horizontal",
+                    //calculate width of income bar
+                    width: `${
+                      (item.income / (item.expense + item.income)) *
+                      calculateWidth(data, item.income, item.expense)
+                    }px`,
+                    backgroundColor: "#CAF2C9FF",
+                    contents: [
+                      {
+                        type: "text",
+                        text: ".",
+                        size: "xxs",
+                        color: "#CAF2C9FF",
+                        contents: [],
+                      },
+                    ],
+                  },
+                ],
+              };
+            }),
+          ],
+        },
+        footer: {
+          type: "box",
+          layout: "horizontal",
+          contents: [],
+        },
+      },
+    };
+
+    // Add header and footer to the first and last message
+    if (index === 0) fullmessage.contents.body.contents.unshift(...header);
+    if (index === splitData.length - 1) {
+      fullmessage.contents.footer.contents.unshift(...footer);
+      fullmessage.contents.body.contents.push(...summary);
+    }
+    return messages.push(fullmessage);
+  });
+
+  return messages
+
+  //other functions
+  function splitArray(data) {
+    //split array
+    const maxLength = 15;
+    if (data.list.length > maxLength) {
+      const splitArrays = [];
+
+      for (let i = 0; i < data.list.length; i += maxLength) {
+        splitArrays.push(data.list.slice(i, i + maxLength));
+      }
+
+      return splitArrays;
+    }
+
+    return [data];
+  }
+
+  function calculateTotalPrice(data) {
+    let totalPrice = 0;
+
+    data.forEach((item) => {
+      totalPrice += item.summary;
+    });
+
+    return totalPrice;
+  }
+
+  function findMaxSumaryPrice(data) {
+    let max = 0;
+
+    data.forEach((item) => {
+      const summation = item.income + item.expense * -1;
+      const absoluteSummarion = summation > 0 ? summation : summation * -1;
+
+      if (absoluteSummarion > max) {
+        max = absoluteSummarion;
+      }
+    });
+
+    return max;
+  }
+
+  function calculateWidth(data, income, expense) {
+    const max = findMaxSumaryPrice(data);
+    const summation = income + expense * -1;
+    const absoluteSummarion = summation > 0 ? summation : summation * -1;
+    return Math.floor((absoluteSummarion / max) * 180);
+  }
 };
 
 //แก้ไขหมวดหมู่ (หมวดหมู่) -> postback
@@ -1166,6 +1513,7 @@ export const tagAccountingList = (data, tag, month) => {
     ];
 
     const summary = [
+      { type: "separator", margin: "md" },
       {
         type: "box",
         layout: "horizontal",
@@ -1327,7 +1675,6 @@ export const tagAccountingList = (data, tag, month) => {
     };
 
     // Add header and footer to the first and last message
-    if (data.length !== 0) summary.unshift({ type: "separator", margin: "md" });
     if (index === 0) fullmessage.contents.body.contents.unshift(...header);
     if (index === splitData.length - 1) {
       fullmessage.contents.footer.contents.unshift(...footer);
