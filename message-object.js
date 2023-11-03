@@ -966,7 +966,7 @@ export const currentMonthAccoutingList = (data) => {
       return splitArrays;
     }
 
-    return [data];
+    return [[data]];
   }
 
   function calculateTotalPrice(data) {
