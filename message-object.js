@@ -656,7 +656,8 @@ export const oldcurrentMonthAccoutingList = (data) => {
 };
 
 export const currentMonthAccoutingList = (data) => {
-  const totalPrice = calculateTotalPrice(data.list);
+  const dateList = data.list;
+  const totalPrice = calculateTotalPrice(dateList);
   const totalIncome = data.list.reduce((acc, item) => {
     return acc + item.income;
   }, 0);
@@ -666,7 +667,7 @@ export const currentMonthAccoutingList = (data) => {
 
   // for large data -> split data into multiple arrays (add new array every 15 items)
   const messages = [];
-  const splitData = splitArray(data);
+  const splitData = splitArray(dateList);
 
   // Generate dynamic message
   splitData.forEach((data, index) => {
@@ -956,17 +957,17 @@ export const currentMonthAccoutingList = (data) => {
   function splitArray(data) {
     //split array
     const maxLength = 15;
-    if (data.list.length > maxLength) {
+    if (data.length > maxLength) {
       const splitArrays = [];
 
-      for (let i = 0; i < data.list.length; i += maxLength) {
-        splitArrays.push(data.list.slice(i, i + maxLength));
+      for (let i = 0; i < data.length; i += maxLength) {
+        splitArrays.push(data.slice(i, i + maxLength));
       }
 
       return splitArrays;
     }
 
-    return [[data]];
+    return [data];
   }
 
   function calculateTotalPrice(data) {
